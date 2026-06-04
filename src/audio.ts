@@ -167,18 +167,12 @@ export function createAudioEngine(audioEl: HTMLAudioElement): AudioEngine {
     return sum / Math.max(1, hi - lo) / 255;
   }
 
-  function idle(): Bands {
-    const t = performance.now() / 1000;
-    const bass = 0.16 + 0.1 * (Math.sin(t * 1.3) * 0.5 + 0.5);
-    const mid = 0.12 + 0.08 * (Math.sin(t * 0.9 + 1.7) * 0.5 + 0.5);
-    const treble = 0.08 + 0.06 * (Math.sin(t * 2.1 + 0.5) * 0.5 + 0.5);
-    return { bass, mid, treble, level: (bass + mid + treble) / 3 };
-  }
+  const silent: Bands = { bass: 0, mid: 0, treble: 0, level: 0 };
 
   function getBands(): Bands {
     let target: Bands;
 
-    if (analyser && freq && ctx && ctx.state === "running" && !audioEl.paused) {
+    if (started && analyser && freq && ctx && ctx.state === "running" && !audioEl.paused) {
       analyser.getByteFrequencyData(freq);
       if (time) analyser.getByteTimeDomainData(time);
       const bass = avg(1, 8);
@@ -187,14 +181,14 @@ export function createAudioEngine(audioEl: HTMLAudioElement): AudioEngine {
 
       if (bass + mid + treble < 0.01) {
         live = false;
-        target = idle();
+        target = silent;
       } else {
         live = true;
         target = { bass, mid, treble, level: Math.min(1, bass * 1.2 + mid * 0.9 + treble * 0.6) };
       }
     } else {
       live = false;
-      target = idle();
+      target = silent;
     }
 
     smoothed.bass += (target.bass - smoothed.bass) * 0.35;

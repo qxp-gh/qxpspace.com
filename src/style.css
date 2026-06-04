@@ -173,8 +173,13 @@ canvas {
 #fx-flicker {
   z-index: 63;
   background: rgba(120, 255, 210, 0.02);
-  opacity: calc(0.18 + var(--level) * 0.5);
-  animation: flicker 4.2s steps(2, end) infinite;
+  opacity: 0.12;
+  animation: none;
+}
+
+body.audio-playing #fx-flicker {
+  opacity: calc(0.12 + var(--level) * 0.35);
+  animation: flicker 5.6s steps(2, end) infinite;
 }
 
 @keyframes flicker {
@@ -209,40 +214,58 @@ canvas {
   clip-path: inset(0 0 0 0);
 }
 
-.glitch::before {
+.glitch::before,
+.glitch::after {
+  opacity: 0;
+  animation: none;
+}
+
+body.audio-playing .glitch::before,
+body.audio-playing .glitch::after {
+  opacity: 1;
+}
+
+body.audio-playing .glitch::before {
   color: var(--cyan);
-  text-shadow: -2px 0 var(--cyan);
-  transform: translate(calc(-2px - var(--glitch) * 6px), 0);
-  animation: glitch-top 3.4s infinite steps(12, end);
+  text-shadow: -1px 0 var(--cyan);
+  transform: translate(calc(-1px - var(--glitch) * 3px), 0);
+  animation: glitch-top 5.2s infinite steps(10, end);
   mix-blend-mode: screen;
 }
 
-.glitch::after {
+body.audio-playing .glitch::after {
   color: var(--magenta);
-  text-shadow: 2px 0 var(--magenta);
-  transform: translate(calc(2px + var(--glitch) * 6px), 0);
-  animation: glitch-bottom 2.7s infinite steps(14, end);
+  text-shadow: 1px 0 var(--magenta);
+  transform: translate(calc(1px + var(--glitch) * 3px), 0);
+  animation: glitch-bottom 4.4s infinite steps(10, end);
   mix-blend-mode: screen;
 }
 
 @keyframes glitch-top {
-  0%, 100% { clip-path: inset(0 0 85% 0); transform: translate(-2px, -1px); }
-  20% { clip-path: inset(10% 0 60% 0); transform: translate(3px, 1px); }
-  40% { clip-path: inset(40% 0 35% 0); transform: translate(-3px, 0); }
-  60% { clip-path: inset(20% 0 55% 0); transform: translate(2px, -2px); }
-  80% { clip-path: inset(60% 0 10% 0); transform: translate(-1px, 1px); }
+  0%, 100% { clip-path: inset(0 0 88% 0); transform: translate(-1px, 0); }
+  35% { clip-path: inset(12% 0 62% 0); transform: translate(2px, 1px); }
+  70% { clip-path: inset(45% 0 38% 0); transform: translate(-2px, 0); }
 }
 
 @keyframes glitch-bottom {
-  0%, 100% { clip-path: inset(70% 0 5% 0); transform: translate(2px, 1px); }
-  25% { clip-path: inset(40% 0 40% 0); transform: translate(-3px, -1px); }
-  50% { clip-path: inset(55% 0 20% 0); transform: translate(3px, 2px); }
-  75% { clip-path: inset(20% 0 65% 0); transform: translate(-2px, 0); }
+  0%, 100% { clip-path: inset(72% 0 6% 0); transform: translate(1px, 0); }
+  40% { clip-path: inset(42% 0 42% 0); transform: translate(-2px, -1px); }
+  80% { clip-path: inset(22% 0 66% 0); transform: translate(2px, 1px); }
 }
 
-/* hard burst used during boot transition */
-body.glitch-burst .glitch::before { animation-duration: 0.18s; }
-body.glitch-burst .glitch::after { animation-duration: 0.14s; }
+/* hard burst used during boot transition (before music is marked playing) */
+body.glitch-burst .glitch::before,
+body.glitch-burst .glitch::after {
+  opacity: 1;
+}
+
+body.glitch-burst .glitch::before {
+  animation-duration: 0.28s;
+}
+
+body.glitch-burst .glitch::after {
+  animation-duration: 0.22s;
+}
 
 /* ============================================================
    Shared layout
@@ -714,7 +737,11 @@ body.entered #stage {
   color: var(--tile-color);
 }
 
-/* LIVE badge + pulsing dot */
+/* LIVE badge — only when .is-live is set from Kick API */
+.tile--kick:not(.is-live) .live-badge {
+  display: none;
+}
+
 .live-badge {
   position: absolute;
   top: clamp(1.1rem, 2.2vw, 1.6rem);
@@ -918,11 +945,6 @@ body.audio-paused .at-eq i {
   border: 1px solid var(--edge);
   border-radius: 6px;
   background: rgba(2, 6, 10, 0.55);
-}
-
-.viz--footer {
-  width: clamp(120px, 22vw, 200px);
-  height: 40px;
 }
 
 .viz--dock {

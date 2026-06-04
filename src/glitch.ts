@@ -5,8 +5,7 @@
  *  - Cover-art glitch: the jewel-case art is split into R/G/B channels which are
  *    offset every frame (chromatic aberration) with occasional datamosh-style
  *    horizontal slice displacement. Intensity is driven by bass.
- *  - Colorful spectrum visualizer(s) (frequency bars + waveform) for the audio dock
- *    and footer "now playing".
+ *  - Colorful spectrum visualizer (frequency bars + waveform) for the audio dock.
  *
  * Everything renders from a SINGLE requestAnimationFrame loop. The loop pauses
  * when the tab is hidden, the device-pixel-ratio is capped, the cover canvas is
@@ -126,8 +125,8 @@ export function createGlitchScene(opts: Options): GlitchScene {
 
   function renderStars(bands: Bands): void {
     if (!sfx) return;
-    const speed = 0.0016 + bands.bass * 0.012 + burst * 0.03;
-    const fade = 0.32 - bands.bass * 0.16 - burst * 0.15;
+    const speed = 0.0016 + bands.bass * 0.006 + burst * 0.02;
+    const fade = 0.32 - bands.bass * 0.08 - burst * 0.1;
     sfx.fillStyle = `rgba(4, 6, 10, ${Math.max(0.08, fade)})`;
     sfx.fillRect(0, 0, sfW, sfH);
 
@@ -237,10 +236,13 @@ export function createGlitchScene(opts: Options): GlitchScene {
     const dx = (w - dw) / 2;
     const dy = (h - dh) / 2;
 
-    const intensity = Math.min(1, bands.bass * 1.3 + burst);
-    const wob = Math.sin(performance.now() / 700) * 0.4 + 0.6; // idle breathing
+    const audioLive = opts.getAudioData?.().live ?? false;
+    const intensity = audioLive ? Math.min(1, bands.bass * 0.95 + burst * 0.5) : burst * 0.35;
+    const wob = audioLive ? Math.sin(performance.now() / 900) * 0.25 + 0.75 : 0;
     const unit = h / 420; // resolution-independent effect scale
-    const off = (1.5 + intensity * 14 + burst * 26) * (0.5 + wob * 0.5) * unit;
+    const off = audioLive
+      ? (0.8 + intensity * 8 + burst * 14) * (0.65 + wob * 0.35) * unit
+      : burst * 4 * unit;
 
     if (channels.length === 3) {
       cvx.globalCompositeOperation = "lighter";
@@ -252,14 +254,14 @@ export function createGlitchScene(opts: Options): GlitchScene {
       cvx.drawImage(channels[0]!, srcX, 0, srcW, srcH, dx, dy, dw, dh);
     }
 
-    // datamosh slices — gated by bass + boot, capped count
-    const sliceChance = 0.04 + intensity * 0.5 + burst * 0.6;
+    // datamosh slices — only when audio is live (or boot burst)
+    const sliceChance = audioLive ? 0.02 + intensity * 0.28 + burst * 0.35 : burst * 0.25;
     if (Math.random() < sliceChance) {
-      const slices = 1 + Math.floor((intensity + burst) * 5);
+      const slices = 1 + Math.floor((intensity + burst) * 3);
       for (let i = 0; i < slices; i++) {
         const sy = Math.random() * h;
-        const sh = 4 * unit + Math.random() * 40 * unit;
-        const shift = (Math.random() - 0.5) * (40 + intensity * 160 + burst * 220) * unit;
+        const sh = 3 * unit + Math.random() * 24 * unit;
+        const shift = (Math.random() - 0.5) * (20 + intensity * 90 + burst * 120) * unit;
         try {
           cvx.drawImage(cv, 0, sy, w, sh, shift, sy, w, sh);
         } catch {
@@ -272,9 +274,9 @@ export function createGlitchScene(opts: Options): GlitchScene {
       }
     }
 
-    if (intensity > 0.25) {
+    if (audioLive && intensity > 0.2) {
       cvx.globalCompositeOperation = "lighter";
-      cvx.fillStyle = `rgba(0, 255, 156, ${intensity * 0.06})`;
+      cvx.fillStyle = `rgba(0, 255, 156, ${intensity * 0.04})`;
       cvx.fillRect(0, 0, w, h);
       cvx.globalCompositeOperation = "source-over";
     }

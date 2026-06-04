@@ -91,21 +91,11 @@
           <div class="jewel-art">
             <canvas id="cover" aria-label="Glitching cover art: a robed mage with a glowing triangle head holding a staff in a neon psychedelic landscape under a green-yellow moon"></canvas>
 
-            <!-- top-left meta panel replaces the PlayStation logo block -->
+            <!-- minimal overlay — title only -->
             <div class="art-meta art-meta--tl" aria-hidden="true">
               <p class="meta-title">qxp ▚ space</p>
-              <p class="meta-line">60 MINUTE SPACE FUNK</p>
-              <p class="meta-line">PSYCHEDELIC ROCK</p>
-              <p class="meta-line">SYNTH FUNK / DISCO MIX</p>
               <p class="meta-line meta-jp">別次元からの放送</p>
               <p class="meta-player">▶ 1&nbsp;PLAYER</p>
-            </div>
-
-            <!-- bottom-right coords + tagline + glyphs -->
-            <div class="art-meta art-meta--br" aria-hidden="true">
-              <p class="meta-unknown">Experience the Unknown.</p>
-              <p class="meta-coords">33.0°N · 110.1°W</p>
-              <div class="glyphs" id="hero-glyphs"></div>
             </div>
 
             <div class="art-badge" aria-hidden="true">
@@ -147,9 +137,9 @@
             <span class="tile-go" aria-hidden="true">↗</span>
           </a>
 
-          <a class="tile tile--kick is-live" href="https://kick.com/qxp-kick" target="_blank" rel="noopener noreferrer">
+          <a class="tile tile--kick" id="kick-tile" href="https://kick.com/qxp-kick" target="_blank" rel="noopener noreferrer">
             <span class="tile-index">02</span>
-            <span class="live-badge" aria-label="Live now on Kick"><span class="live-dot"></span>LIVE</span>
+            <span class="live-badge" hidden aria-hidden="true" aria-label="Live now on Kick"><span class="live-dot"></span>LIVE</span>
             <span class="tile-glyph" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h6v6h3V6h3V3h6v9h-3v3h-3v3h3v3h-6v-3h-3v-3H9v6H3V3Z"/></svg>
             </span>
@@ -208,7 +198,6 @@
     <footer id="footer" aria-hidden="true">
       <div class="footer-grid">
         <div class="now-playing" id="now-playing">
-          <canvas id="viz-footer" class="viz viz--footer" aria-hidden="true"></canvas>
           <span class="np-text">
             <span class="np-label">NOW PLAYING</span>
             <span class="np-track">60 Minute Space Funk · Psychedelic / Synth Mix</span>

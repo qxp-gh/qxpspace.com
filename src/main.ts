@@ -2,6 +2,7 @@ import "./style.css";
 import { createAudioEngine } from "./audio";
 import { createGlitchScene } from "./glitch";
 import { setupIntro } from "./intro";
+import { setupKickLiveStatus } from "./kick";
 
 /* ---------- helpers ---------- */
 
@@ -41,20 +42,18 @@ function init(): void {
   const audioToggle = $<HTMLButtonElement>("audio-toggle");
   const volumeEl = $<HTMLInputElement>("volume");
   const vizDock = $<HTMLCanvasElement>("viz");
-  const vizFooter = $<HTMLCanvasElement>("viz-footer");
   const yearEl = $("year");
+  const root = document.documentElement;
 
   if (yearEl) yearEl.textContent = String(new Date().getFullYear());
-  buildGlyphs($("hero-glyphs"));
   buildGlyphs($("footer-glyphs"));
+  setupKickLiveStatus($("kick-tile"));
 
   if (!audioEl || !starfield || !cover) return;
 
   const audio = createAudioEngine(audioEl);
 
-  const visualizers = [vizDock, vizFooter].filter(
-    (c): c is HTMLCanvasElement => c != null,
-  );
+  const visualizers = vizDock ? [vizDock] : [];
 
   const scene = createGlitchScene({
     starfield,
@@ -72,11 +71,22 @@ function init(): void {
   // reflect the persisted/default volume on the slider
   if (volumeEl) volumeEl.value = String(Math.round(audio.getVolume() * 100));
 
+  const syncAudioReactive = (): void => {
+    const bands = audio.getBands();
+    const playing = audio.isPlaying() && audio.isLive();
+    root.style.setProperty("--bass", String(bands.bass));
+    root.style.setProperty("--mid", String(bands.mid));
+    root.style.setProperty("--level", String(bands.level));
+    root.style.setProperty("--glitch", String(playing ? Math.min(1, bands.level * 0.85) : 0));
+    document.body.classList.toggle("audio-playing", playing);
+  };
+
   const updateToggleUI = (muted: boolean): void => {
     if (!audioToggle) return;
     audioToggle.setAttribute("aria-pressed", String(muted));
     audioToggle.setAttribute("aria-label", muted ? "Unmute audio" : "Mute audio");
-    document.body.classList.toggle("audio-paused", muted);
+    document.body.classList.toggle("audio-paused", muted || !audio.isPlaying());
+    syncAudioReactive();
   };
 
   setupIntro({
@@ -89,7 +99,12 @@ function init(): void {
       footer?.removeAttribute("aria-hidden");
       if (audioDock) audioDock.hidden = false;
       scene.resize(); // size the now-revealed dock visualizer
-      document.body.classList.toggle("audio-paused", !audio.isPlaying());
+      updateToggleUI(audio.isMuted());
+      const tick = (): void => {
+        syncAudioReactive();
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
     },
   });
 
