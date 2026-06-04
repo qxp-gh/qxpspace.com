@@ -450,77 +450,7 @@ body.entered #stage {
     linear-gradient(90deg, rgba(2, 5, 9, 0.6) 0%, transparent 36%);
 }
 
-/* meta panels overlay (cover the baked-in PS branding) */
-.art-meta {
-  position: absolute;
-  font-family: var(--font-mono);
-  line-height: 1.15;
-  z-index: 3;
-  pointer-events: none;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
-}
-
-.art-meta--tl {
-  top: clamp(6px, 1.6vw, 16px);
-  left: clamp(6px, 1.6vw, 16px);
-  max-width: 62%;
-  padding: clamp(0.5rem, 1.2vw, 0.85rem) clamp(0.7rem, 1.6vw, 1.1rem);
-  background: linear-gradient(150deg, rgba(3, 8, 12, 0.86), rgba(3, 8, 12, 0.66));
-  border: 1px solid var(--edge);
-  border-radius: 5px;
-  backdrop-filter: blur(2px);
-}
-
-.meta-title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  color: var(--green);
-  letter-spacing: 0.08em;
-  font-size: clamp(0.85rem, 1.8vw, 1.15rem);
-  margin: 0 0 0.25rem;
-}
-
-.meta-line {
-  margin: 0;
-  font-size: clamp(0.72rem, 1.4vw, 0.95rem);
-  letter-spacing: 0.16em;
-  color: var(--cyan);
-  text-transform: uppercase;
-}
-
-.meta-jp {
-  color: var(--purple);
-  letter-spacing: 0.05em;
-}
-
-.meta-player {
-  margin: 0.35rem 0 0;
-  font-size: clamp(0.7rem, 1.3vw, 0.9rem);
-  letter-spacing: 0.18em;
-  color: var(--ink);
-}
-
-.art-meta--br {
-  right: clamp(6px, 1.6vw, 16px);
-  bottom: clamp(6px, 1.6vw, 14px);
-  text-align: right;
-}
-
-.meta-unknown {
-  margin: 0;
-  font-size: clamp(0.78rem, 1.5vw, 1rem);
-  color: var(--moon);
-  letter-spacing: 0.04em;
-}
-
-.meta-coords {
-  margin: 0.1rem 0 0.4rem;
-  font-size: clamp(0.72rem, 1.3vw, 0.9rem);
-  letter-spacing: 0.18em;
-  color: var(--ink);
-}
-
-/* glyph row (echoes the bottom-right of the cover) */
+/* glyph row (footer + cover echoes) */
 .glyphs {
   display: inline-flex;
   gap: clamp(6px, 1vw, 12px);
@@ -540,10 +470,6 @@ body.entered #stage {
 .glyphs .glyph svg {
   width: 64%;
   height: 64%;
-}
-
-.art-meta--br .glyphs {
-  margin-left: auto;
 }
 
 /* bottom-left badge — covers the baked Sony/ESRB block, rebranded */
@@ -1211,9 +1137,6 @@ body.entering #intro {
     text-align: center;
   }
 
-  .art-meta--tl .meta-jp {
-    display: none;
-  }
 }
 
 @media (max-width: 560px) {
@@ -1228,10 +1151,6 @@ body.entering #intro {
 
   .spine-tag {
     display: none;
-  }
-
-  .art-meta--tl {
-    max-width: 62%;
   }
 
   .headline {
