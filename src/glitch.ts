@@ -125,7 +125,8 @@ export function createGlitchScene(opts: Options): GlitchScene {
 
   function renderStars(bands: Bands): void {
     if (!sfx) return;
-    const speed = 0.0016 + bands.bass * 0.006 + burst * 0.02;
+    // bass drives warp speed; mid adds a gentle breathing drift on top
+    const speed = 0.0016 + bands.bass * 0.006 + bands.mid * 0.0016 + burst * 0.02;
     const fade = 0.32 - bands.bass * 0.08 - burst * 0.1;
     sfx.fillStyle = `rgba(4, 6, 10, ${Math.max(0.08, fade)})`;
     sfx.fillRect(0, 0, sfW, sfH);
@@ -133,7 +134,9 @@ export function createGlitchScene(opts: Options): GlitchScene {
     const cxw = sfW / 2;
     const cyh = sfH / 2;
     const spread = Math.min(sfW, sfH) * 0.9;
-    const energy = bands.bass + burst;
+    // treble = high-end shimmer: subtly brightens and enlarges stars
+    const twinkle = bands.treble;
+    const energy = bands.bass + bands.treble * 0.35 + burst;
 
     for (const s of stars) {
       s.z -= speed;
@@ -148,13 +151,14 @@ export function createGlitchScene(opts: Options): GlitchScene {
       const py = cyh + s.y * k;
       if (px < 0 || px > sfW || py < 0 || py > sfH) continue;
 
-      const size = Math.max(0.4, (1 - s.z) * 2.4);
+      const size = Math.max(0.4, (1 - s.z) * 2.4) * (1 + twinkle * 0.5);
+      const alpha = Math.min(1, (1 - s.z) * 1.2 * (1 + twinkle * 0.3));
       const color = STAR_COLORS[s.hue] ?? "#00ff9c";
 
       // streaks only when energetic AND for nearer stars (bounds stroke count)
       if (energy > 0.18 && s.z < 0.55) {
         const pz = spread / Math.min(1, s.z + speed * 4);
-        sfx.globalAlpha = Math.min(1, (1 - s.z) * 1.2);
+        sfx.globalAlpha = alpha;
         sfx.lineWidth = size;
         sfx.strokeStyle = color;
         sfx.beginPath();
@@ -162,7 +166,7 @@ export function createGlitchScene(opts: Options): GlitchScene {
         sfx.lineTo(px, py);
         sfx.stroke();
       } else {
-        sfx.globalAlpha = Math.min(1, (1 - s.z) * 1.2);
+        sfx.globalAlpha = alpha;
         sfx.fillStyle = color;
         sfx.fillRect(px, py, size, size);
       }
