@@ -472,42 +472,6 @@ body.entered #stage {
   height: 64%;
 }
 
-/* bottom-left badge — covers the baked Sony/ESRB block, rebranded */
-.art-badge {
-  position: absolute;
-  left: clamp(6px, 1.6vw, 16px);
-  bottom: clamp(6px, 1.6vw, 14px);
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.3rem 0.55rem;
-  background: linear-gradient(150deg, rgba(3, 8, 12, 0.9), rgba(3, 8, 12, 0.72));
-  border: 1px solid var(--edge);
-  border-radius: 5px;
-  font-family: var(--font-mono);
-  pointer-events: none;
-}
-
-.badge-mark {
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: clamp(0.9rem, 2vw, 1.25rem);
-  line-height: 1;
-  color: var(--green);
-  border: 1px solid var(--edge);
-  border-radius: 3px;
-  padding: 0.1rem 0.32rem;
-}
-
-.badge-text {
-  font-size: clamp(0.6rem, 1.2vw, 0.78rem);
-  letter-spacing: 0.16em;
-  line-height: 1.1;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-}
-
 /* HUD corner ticks */
 .art-corner {
   position: absolute;
