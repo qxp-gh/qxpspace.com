@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+.gitignore
+*.log
+.DS_Store
+README.md
+# root source-audio duplicate; the served copy lives in public/audio/
+/playlist.mp3

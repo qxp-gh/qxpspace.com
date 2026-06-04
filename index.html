@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#04060a" />
+    <title>qxp space — Experience the Unknown</title>
+    <meta
+      name="description"
+      content="qxp space — a personal digital dimension. Live coding, building projects & gaming on Kick, AI orchestration & context engineering, broadcast from another dimension."
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="qxp space — Experience the Unknown" />
+    <meta
+      property="og:description"
+      content="A personal digital dimension. Live coding, building projects & gaming on Kick, AI orchestration & context engineering. From another dimension."
+    />
+    <meta property="og:image" content="/cover.png" />
+    <meta property="og:url" content="https://qxpspace.com" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" type="image/png" href="/cover.png" />
+
+    <!-- Fonts: VT323 (PS-UI mono) + Orbitron (glitch display) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=VT323&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body class="booting">
+    <!-- ===== Global CRT / glitch overlays (fixed, non-interactive) ===== -->
+    <canvas id="starfield" aria-hidden="true"></canvas>
+    <div id="fx-scanlines" aria-hidden="true"></div>
+    <div id="fx-vignette" aria-hidden="true"></div>
+    <div id="fx-crt" aria-hidden="true"></div>
+    <div id="fx-flicker" aria-hidden="true"></div>
+    <div id="boot-flash" aria-hidden="true"></div>
+
+    <!-- ===== PRESS START intro gate ===== -->
+    <div id="intro" role="dialog" aria-label="Enter qxp space">
+      <div class="intro-inner">
+        <div class="intro-rating" aria-hidden="true">
+          <span class="rating-box">E</span>
+          <span class="rating-text">ENTER ·<br />THE UNKNOWN</span>
+        </div>
+
+        <div class="intro-logo glitch" data-text="qxp">qxp</div>
+        <div class="intro-sub">PERSONAL DIGITAL DIMENSION</div>
+
+        <button id="press-start" class="press-start" type="button" aria-label="Press start to enter qxp space and start the music">
+          <span class="ps-label">PRESS&nbsp;START</span>
+          <span class="ps-hint">▶ ENTER THE SPACE</span>
+        </button>
+
+        <div class="intro-meta" aria-hidden="true">
+          <span>33.0°N&nbsp;110.1°W</span>
+          <span class="dot-sep">·</span>
+          <span>60 MIN SPACE FUNK</span>
+          <span class="dot-sep">·</span>
+          <span>NTSC&nbsp;U/C</span>
+        </div>
+        <div class="intro-note">click to unlock audio · loops · best with sound on</div>
+      </div>
+    </div>
+
+    <!-- ===== Main experience ===== -->
+    <main id="stage" aria-hidden="true">
+      <!-- ---------- HERO ---------- -->
+      <section id="hero" class="section">
+        <div class="hero-head">
+          <p class="kicker">▶ NOW ENTERING</p>
+          <h1 class="headline glitch" data-text="WELCOME TO qxp space">
+            WELCOME TO <span class="hl-accent">qxp space</span>
+          </h1>
+          <p class="tagline">transmitting from another dimension</p>
+        </div>
+
+        <!-- Jewel case -->
+        <figure class="jewel" aria-label="qxp space — jewel case cover art">
+          <!-- left spine replaces the PlayStation wordmark -->
+          <div class="spine" aria-hidden="true">
+            <span class="spine-word">qxp&nbsp;space</span>
+            <span class="spine-tag">EXPERIENCE THE UNKNOWN</span>
+          </div>
+
+          <div class="jewel-art">
+            <canvas id="cover" aria-label="Glitching cover art: a robed mage with a glowing triangle head holding a staff in a neon psychedelic landscape under a green-yellow moon"></canvas>
+
+            <!-- top-left meta panel replaces the PlayStation logo block -->
+            <div class="art-meta art-meta--tl" aria-hidden="true">
+              <p class="meta-title">qxp ▚ space</p>
+              <p class="meta-line">60 MINUTE SPACE FUNK</p>
+              <p class="meta-line">PSYCHEDELIC ROCK</p>
+              <p class="meta-line">SYNTH FUNK / DISCO MIX</p>
+              <p class="meta-line meta-jp">別次元からの放送</p>
+              <p class="meta-player">▶ 1&nbsp;PLAYER</p>
+            </div>
+
+            <!-- bottom-right coords + tagline + glyphs -->
+            <div class="art-meta art-meta--br" aria-hidden="true">
+              <p class="meta-unknown">Experience the Unknown.</p>
+              <p class="meta-coords">33.0°N · 110.1°W</p>
+              <div class="glyphs" id="hero-glyphs"></div>
+            </div>
+
+            <div class="art-badge" aria-hidden="true">
+              <span class="badge-mark">E</span>
+              <span class="badge-text">ENTER ·<br />THE UNKNOWN</span>
+            </div>
+
+            <span class="art-corner art-corner--tl" aria-hidden="true"></span>
+            <span class="art-corner art-corner--tr" aria-hidden="true"></span>
+            <span class="art-corner art-corner--bl" aria-hidden="true"></span>
+            <span class="art-corner art-corner--br" aria-hidden="true"></span>
+          </div>
+        </figure>
+
+        <a class="scroll-hint" href="#links" aria-label="Scroll to links">
+          <span>SELECT A SIGNAL</span>
+          <span class="chev" aria-hidden="true">▾</span>
+        </a>
+      </section>
+
+      <!-- ---------- LINKS HUB ---------- -->
+      <section id="links" class="section">
+        <header class="section-head">
+          <h2 class="section-title glitch" data-text="SIGNALS">SIGNALS</h2>
+          <p class="section-kicker">// select a channel · press enter</p>
+        </header>
+
+        <nav class="tiles" aria-label="qxp channels">
+          <a class="tile tile--yt" href="https://youtube.com/@qxp_yt" target="_blank" rel="noopener noreferrer">
+            <span class="tile-index">01</span>
+            <span class="tile-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 7.5a3 3 0 0 0-2.1-2.1C19 4.8 12 4.8 12 4.8s-7 0-8.9.6A3 3 0 0 0 1 7.5 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.5a3 3 0 0 0 2.1 2.1c1.9.6 8.9.6 8.9.6s7 0 8.9-.6A3 3 0 0 0 23 16.5 31 31 0 0 0 23.5 12 31 31 0 0 0 23 7.5ZM9.8 15.3V8.7l5.7 3.3-5.7 3.3Z"/></svg>
+            </span>
+            <span class="tile-body">
+              <span class="tile-name">YouTube</span>
+              <span class="tile-handle">@qxp_yt</span>
+              <span class="tile-desc">long-form drops · the archive of the space</span>
+            </span>
+            <span class="tile-go" aria-hidden="true">↗</span>
+          </a>
+
+          <a class="tile tile--kick is-live" href="https://kick.com/qxp-kick" target="_blank" rel="noopener noreferrer">
+            <span class="tile-index">02</span>
+            <span class="live-badge" aria-label="Live now on Kick"><span class="live-dot"></span>LIVE</span>
+            <span class="tile-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h6v6h3V6h3V3h6v9h-3v3h-3v3h3v3h-6v-3h-3v-3H9v6H3V3Z"/></svg>
+            </span>
+            <span class="tile-body">
+              <span class="tile-name">Kick</span>
+              <span class="tile-handle">@qxp-kick</span>
+              <span class="tile-desc">building, gaming &amp; creating live · come hang</span>
+            </span>
+            <span class="tile-go" aria-hidden="true">↗</span>
+          </a>
+
+          <a class="tile tile--gh" href="https://github.com/qxp-gh" target="_blank" rel="noopener noreferrer">
+            <span class="tile-index">03</span>
+            <span class="tile-glyph" aria-hidden="true">
+              <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+            </span>
+            <span class="tile-body">
+              <span class="tile-name">GitHub</span>
+              <span class="tile-handle">qxp-gh</span>
+              <span class="tile-desc">source · experiments · the build logs</span>
+            </span>
+            <span class="tile-go" aria-hidden="true">↗</span>
+          </a>
+        </nav>
+      </section>
+
+      <!-- ---------- MANIFESTO ---------- -->
+      <section id="about" class="section">
+        <header class="section-head">
+          <h2 class="section-title glitch" data-text="THE qxp MANIFESTO">THE qxp MANIFESTO</h2>
+          <p class="section-kicker">// who · what · why</p>
+        </header>
+
+        <div class="manifesto">
+          <p class="manifesto-lead">
+            <strong>qxp</strong> is a personal digital dimension — a space pieced together from
+            signal, noise and a lot of late nights.
+          </p>
+          <p>
+            I build and create projects <em>live</em> on Kick: shipping real software in real time,
+            wiring up <span class="hl">AI orchestration</span> and
+            <span class="hl">context engineering</span> until the machine starts to think with me —
+            then I drop the controller and <span class="hl">play games</span> on stream, because the
+            space runs on play as much as it runs on code.
+          </p>
+          <p>
+            The good runs get cut, polished and dropped on YouTube. Everything else lives here, in
+            the space — <span class="hl">from another dimension</span>, transmitting on a loop.
+          </p>
+          <p class="manifesto-sign">— signed · <span class="sign-handle">qxp</span></p>
+        </div>
+      </section>
+    </main>
+
+    <!-- ===== Footer ===== -->
+    <footer id="footer" aria-hidden="true">
+      <div class="footer-grid">
+        <div class="now-playing" id="now-playing">
+          <canvas id="viz-footer" class="viz viz--footer" aria-hidden="true"></canvas>
+          <span class="np-text">
+            <span class="np-label">NOW PLAYING</span>
+            <span class="np-track">60 Minute Space Funk · Psychedelic / Synth Mix</span>
+          </span>
+        </div>
+
+        <div class="footer-glyphs">
+          <div class="glyphs" id="footer-glyphs"></div>
+          <p class="footer-coords">33.0°N · 110.1°W</p>
+        </div>
+
+        <div class="footer-credit">
+          <p>
+            source mix ·
+            <a href="https://www.youtube.com/watch?v=Z0f1szlfFYk" target="_blank" rel="noopener noreferrer">
+              60 Minute Space Funk on YouTube ↗
+            </a>
+          </p>
+          <p class="footer-brand">qxpspace.com · © <span id="year">2026</span> qxp · Experience the Unknown.</p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- ===== Floating audio dock: visualizer + mute + volume ===== -->
+    <div id="audio-dock" class="audio-dock" aria-label="Audio controls" hidden>
+      <canvas id="viz" class="viz viz--dock" aria-hidden="true"></canvas>
+      <button id="audio-toggle" class="audio-toggle" type="button" aria-label="Mute audio" aria-pressed="false">
+        <svg class="ic ic-on" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
+          <path d="M16 8.6a4 4 0 0 1 0 6.8M18.6 6a7 7 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+        </svg>
+        <svg class="ic ic-off" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
+          <path d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+        </svg>
+      </button>
+      <input id="volume" class="volume" type="range" min="0" max="100" value="45" step="1" aria-label="Volume" />
+    </div>
+
+    <!-- ===== Audio element (source of truth for Web Audio) ===== -->
+    <audio id="audio" src="/audio/playlist.mp3" loop preload="auto" crossorigin="anonymous" playsinline></audio>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

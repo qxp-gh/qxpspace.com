@@ -1,0 +1,18 @@
+{
+  "name": "qxpspace",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "qxp space - an immersive single-page dimension. PlayStation/psychedelic-glitch landing for qxpspace.com",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.0",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16"
+  }
+}
