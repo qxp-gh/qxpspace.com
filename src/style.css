@@ -964,31 +964,6 @@ body.entering #intro {
   padding: var(--gutter);
 }
 
-.intro-rating {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  border: 1px solid var(--edge);
-  border-radius: 4px;
-  padding: 0.3rem 0.6rem;
-  color: var(--ink-dim);
-}
-
-.rating-box {
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 1.3rem;
-  color: var(--green);
-  line-height: 1;
-}
-
-.rating-text {
-  font-size: 0.7rem;
-  letter-spacing: 0.2em;
-  text-align: left;
-  line-height: 1.1;
-}
-
 .intro-logo {
   font-family: var(--font-display);
   font-weight: 900;
