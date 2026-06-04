@@ -46,6 +46,7 @@ function init(): void {
   const root = document.documentElement;
 
   if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+  buildGlyphs($("hero-glyphs"));
   buildGlyphs($("footer-glyphs"));
   setupKickLiveStatus($("kick-tile"));
 
