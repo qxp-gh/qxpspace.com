@@ -30,6 +30,11 @@
   --level: 0;
   --glitch: 0;
 
+  /* overscroll-up easter egg: 1 = visible, 0 = foreground faded out.
+     Fades #stage/#footer + FX overlays; the #starfield background and
+     #audio-dock are deliberately left untouched. */
+  --reveal: 1;
+
   --gutter: clamp(1rem, 4vw, 4rem);
   color-scheme: dark;
 }
@@ -112,13 +117,13 @@ canvas {
     rgba(0, 0, 0, 0) 4px
   );
   mix-blend-mode: multiply;
-  opacity: 0.55;
+  opacity: calc(0.55 * var(--reveal));
   transition: opacity 0.08s linear;
 }
 
 /* scanlines breathe gently with overall audio level */
 body.audio-playing #fx-scanlines {
-  opacity: calc(0.55 + var(--level) * 0.12);
+  opacity: calc((0.55 + var(--level) * 0.12) * var(--reveal));
 }
 
 /* subtle moving scanline beam */
@@ -153,6 +158,8 @@ body.audio-playing #fx-scanlines {
     rgba(0, 0, 0, 0.92) 100%
   );
   z-index: 61;
+  opacity: var(--reveal);
+  transition: opacity 0.12s linear;
 }
 
 /* vignette edges pump inward gently on the bass */
@@ -176,6 +183,8 @@ body.audio-playing #fx-vignette {
     transparent 60%,
     rgba(2, 5, 8, 0.35) 100%
   );
+  opacity: var(--reveal);
+  transition: opacity 0.12s linear;
 }
 
 /* CRT phosphor glow swells with the bass */
@@ -198,6 +207,8 @@ body.audio-playing #fx-crt {
   background: rgba(120, 255, 210, 0.02);
   opacity: 0.12;
   animation: none;
+  filter: opacity(var(--reveal));
+  transition: filter 0.12s linear;
 }
 
 body.audio-playing #fx-flicker {
@@ -298,7 +309,8 @@ body.glitch-burst .glitch::after {
   position: relative;
   z-index: 10;
   opacity: 0;
-  transition: opacity 0.9s ease 0.15s;
+  filter: opacity(var(--reveal));
+  transition: opacity 0.9s ease 0.15s, filter 0.12s linear;
 }
 
 body.entered #stage {
@@ -791,16 +803,6 @@ body.entered #stage {
   font-style: normal;
 }
 
-.manifesto-sign {
-  margin-top: 1.8rem;
-  color: var(--ink-dim);
-  letter-spacing: 0.12em;
-}
-
-.sign-handle {
-  color: var(--magenta);
-}
-
 /* ============================================================
    FOOTER
    ============================================================ */
@@ -812,7 +814,8 @@ body.entered #stage {
   background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4));
   padding: clamp(1.6rem, 4vw, 2.6rem) var(--gutter);
   opacity: 0;
-  transition: opacity 0.9s ease 0.3s;
+  filter: opacity(var(--reveal));
+  transition: opacity 0.9s ease 0.3s, filter 0.12s linear;
 }
 
 body.entered #footer {
