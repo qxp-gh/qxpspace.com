@@ -108,22 +108,18 @@ canvas {
   z-index: 60;
 }
 
+/* darkening baked into rgba (no mix-blend-mode) so this layer never re-blends
+   the backdrop; opacity is static (driven only by the rare --reveal easter egg) */
 #fx-scanlines {
   background-image: repeating-linear-gradient(
     to bottom,
     rgba(0, 0, 0, 0) 0,
     rgba(0, 0, 0, 0) 2px,
-    rgba(0, 0, 0, 0.28) 3px,
+    rgba(0, 0, 0, 0.34) 3px,
     rgba(0, 0, 0, 0) 4px
   );
-  mix-blend-mode: multiply;
-  opacity: calc(0.55 * var(--reveal));
-  transition: opacity 0.08s linear;
-}
-
-/* scanlines breathe gently with overall audio level */
-body.audio-playing #fx-scanlines {
-  opacity: calc((0.55 + var(--level) * 0.12) * var(--reveal));
+  opacity: calc(0.5 * var(--reveal));
+  transition: opacity 0.12s linear;
 }
 
 /* subtle moving scanline beam */
@@ -150,6 +146,8 @@ body.audio-playing #fx-scanlines {
   }
 }
 
+/* static gradient — the bass "pump" now lives on the composited #fx-crt::after
+   glow + the starfield canvas, so this full-screen layer never repaints */
 #fx-vignette {
   background: radial-gradient(
     120% 110% at 50% 45%,
@@ -160,16 +158,6 @@ body.audio-playing #fx-scanlines {
   z-index: 61;
   opacity: var(--reveal);
   transition: opacity 0.12s linear;
-}
-
-/* vignette edges pump inward gently on the bass */
-body.audio-playing #fx-vignette {
-  background: radial-gradient(
-    120% 110% at 50% 45%,
-    transparent calc(52% - var(--bass) * 6%),
-    rgba(0, 0, 0, 0.55) 86%,
-    rgba(0, 0, 0, 0.92) 100%
-  );
 }
 
 /* faux CRT curvature + glass highlight */
@@ -187,13 +175,6 @@ body.audio-playing #fx-vignette {
   transition: opacity 0.12s linear;
 }
 
-/* CRT phosphor glow swells with the bass */
-body.audio-playing #fx-crt {
-  box-shadow:
-    inset 0 0 140px rgba(0, 0, 0, 0.7),
-    inset 0 0 calc(30px + var(--bass) * 40px) rgba(0, 255, 156, calc(0.05 + var(--bass) * 0.08));
-}
-
 #fx-crt::before {
   content: "";
   position: absolute;
@@ -201,18 +182,34 @@ body.audio-playing #fx-crt {
   background: linear-gradient(105deg, rgba(255, 255, 255, 0.05), transparent 28%);
 }
 
-/* flicker boosted by audio level */
+/* CRT phosphor glow swells with the bass — own compositor layer, so the bass
+   "pump" is an opacity (composite-only) change, never a full-screen repaint */
+#fx-crt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 70px rgba(0, 255, 156, 0.18);
+  opacity: 0;
+  will-change: opacity;
+  transition: opacity 0.12s linear;
+}
+
+body.audio-playing #fx-crt::after {
+  opacity: var(--bass);
+}
+
+/* VHS flicker — opacity keyframes only (composited), no per-frame var writes */
 #fx-flicker {
   z-index: 63;
-  background: rgba(120, 255, 210, 0.02);
+  background: rgba(120, 255, 210, 0.025);
   opacity: 0.12;
   animation: none;
+  will-change: opacity;
   filter: opacity(var(--reveal));
   transition: filter 0.12s linear;
 }
 
 body.audio-playing #fx-flicker {
-  opacity: calc(0.12 + var(--level) * 0.35);
   animation: flicker 5.6s steps(2, end) infinite;
 }
 
@@ -418,9 +415,27 @@ body.entered #stage {
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.6),
     0 30px 90px rgba(0, 0, 0, 0.65),
-    0 0 60px rgba(0, 255, 156, calc(0.08 + var(--bass) * 0.22));
+    0 0 60px rgba(0, 255, 156, 0.12);
+  /* rotateX is a 3D transform → own layer, so the bass tilt is composite-only */
   transform: perspective(1400px) rotateX(calc(var(--bass) * 1.2deg));
-  transition: box-shadow 0.1s linear;
+  transition: transform 0.12s linear;
+}
+
+/* bass-driven halo — composited opacity pulse instead of a reactive box-shadow */
+.jewel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  pointer-events: none;
+  box-shadow: 0 0 70px rgba(0, 255, 156, 0.55);
+  opacity: 0;
+  will-change: opacity;
+  transition: opacity 0.12s linear;
+}
+
+body.audio-playing .jewel::after {
+  opacity: var(--bass);
 }
 
 .spine {
@@ -1173,6 +1188,21 @@ body.entering #intro {
 
 }
 
+/* Mobile / touch perf profile — matches the JS scene query (DPR=1, fewer stars,
+   ~30fps). Shed the continuously-animating + blended overlays that cost the most
+   on phones: the moving scan beam, the VHS flicker, and the RGB channel-split text. */
+@media (max-width: 760px), (pointer: coarse) {
+  #fx-scanlines::after,
+  #fx-flicker {
+    display: none;
+  }
+
+  .glitch::before,
+  .glitch::after {
+    display: none;
+  }
+}
+
 @media (max-width: 560px) {
   /* lighten heavy fixed overlays on small screens for perf/legibility */
   #fx-crt {
@@ -1221,5 +1251,15 @@ body.entering #intro {
 
   .scroll-hint .chev {
     animation: none;
+  }
+
+  /* freeze the bass-driven pulses to a calm constant — no flashing/wobble */
+  body.audio-playing #fx-crt::after,
+  body.audio-playing .jewel::after {
+    opacity: 0.12 !important;
+  }
+
+  .jewel {
+    transform: none !important;
   }
 }

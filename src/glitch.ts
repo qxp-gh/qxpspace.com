@@ -7,11 +7,12 @@
  *    horizontal slice displacement. Intensity is driven by bass.
  *  - Colorful spectrum visualizer (frequency bars + waveform) for the audio dock.
  *
- * Everything renders from a SINGLE requestAnimationFrame loop. The loop pauses
- * when the tab is hidden, the device-pixel-ratio is capped, the cover canvas is
- * resolution-limited, and off-screen visualizers are skipped — all to keep it
- * smooth on a typical laptop / phone. No per-frame CSS writes (avoids layout
- * thrash); reactivity lives entirely on the canvases.
+ * Everything renders from a SINGLE requestAnimationFrame loop. An optional
+ * `onFrame(bands)` hook lets the host run its own per-frame logic (e.g. quantized,
+ * compositor-only CSS writes) from this same loop instead of a second rAF. The
+ * loop pauses when the tab is hidden; on mobile the device-pixel-ratio drops to 1,
+ * the star count and frame-rate are capped; the cover canvas is resolution-limited
+ * and short-circuits when idle; off-screen visualizers are skipped.
  */
 
 import type { Bands } from "./audio";
@@ -54,6 +55,8 @@ interface Options {
   reducedMotion: boolean;
   visualizers?: HTMLCanvasElement[];
   getAudioData?: () => AudioData;
+  /** Per-frame hook run from the single rAF loop (after canvases render). */
+  onFrame?: (bands: Bands) => void;
 }
 
 const STAR_COLORS = ["#00ff9c", "#00e0ff", "#b14dff", "#d6ff5c", "#ff2bd6"];
@@ -67,12 +70,14 @@ const MAX_COVER_W = 1100;
 
 export function createGlitchScene(opts: Options): GlitchScene {
   const isMobile = matchMedia("(max-width: 760px), (pointer: coarse)").matches;
-  const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+  // Mobile/GPU-thermal budget: cap backing resolution to 1× and the loop to ~30fps.
+  const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1 : MAX_DPR);
+  const minFrameMs = isMobile && !opts.reducedMotion ? 1000 / 32 : 0;
 
   // -------- starfield --------
   const sf = opts.starfield;
   const sfx = sf.getContext("2d");
-  const starCount = opts.reducedMotion ? 80 : isMobile ? 110 : 240;
+  const starCount = opts.reducedMotion ? 60 : isMobile ? 72 : 240;
   let stars: Star[] = [];
   let sfW = 0;
   let sfH = 0;
@@ -82,6 +87,7 @@ export function createGlitchScene(opts: Options): GlitchScene {
   const cvx = cv.getContext("2d");
   const channels: HTMLCanvasElement[] = [];
   let coverReady = false;
+  let coverIdleDrawn = false;
   let imgW = 0;
   let imgH = 0;
 
@@ -98,6 +104,7 @@ export function createGlitchScene(opts: Options): GlitchScene {
   let raf = 0;
   let running = false;
   let burst = 0; // 0..1, decays over time
+  let lastRenderTs = 0;
 
   /* ---------------- starfield ---------------- */
 
@@ -192,7 +199,7 @@ export function createGlitchScene(opts: Options): GlitchScene {
     const base = document.createElement("canvas");
     base.width = imgW;
     base.height = imgH;
-    const bctx = base.getContext("2d");
+    const bctx = base.getContext("2d", { willReadFrequently: true });
     if (!bctx) return;
     bctx.drawImage(img, 0, 0);
 
@@ -227,6 +234,13 @@ export function createGlitchScene(opts: Options): GlitchScene {
 
   function renderCover(bands: Bands): void {
     if (!cvx || !coverReady) return;
+
+    const audioLive = opts.getAudioData?.().live ?? false;
+    // Idle (paused + boot burst spent): draw the clean cover once, then skip the
+    // per-frame 3× composite drawImage work until something is live again.
+    const active = audioLive || burst > 0;
+    if (!active && coverIdleDrawn) return;
+
     const w = cv.width;
     const h = cv.height;
     cvx.clearRect(0, 0, w, h);
@@ -240,7 +254,6 @@ export function createGlitchScene(opts: Options): GlitchScene {
     const dx = (w - dw) / 2;
     const dy = (h - dh) / 2;
 
-    const audioLive = opts.getAudioData?.().live ?? false;
     const intensity = audioLive ? Math.min(1, bands.bass * 0.95 + burst * 0.5) : burst * 0.35;
     const wob = audioLive ? Math.sin(performance.now() / 900) * 0.25 + 0.75 : 0;
     const unit = h / 420; // resolution-independent effect scale
@@ -284,6 +297,8 @@ export function createGlitchScene(opts: Options): GlitchScene {
       cvx.fillRect(0, 0, w, h);
       cvx.globalCompositeOperation = "source-over";
     }
+
+    coverIdleDrawn = !active;
   }
 
   /* ---------------- visualizers ---------------- */
@@ -403,16 +418,20 @@ export function createGlitchScene(opts: Options): GlitchScene {
 
   /* ---------------- loop ---------------- */
 
-  function frame(): void {
+  function frame(ts: number): void {
     if (!running) return;
+    raf = requestAnimationFrame(frame);
+    // optional mobile frame-rate cap (renders every other vsync on a 60Hz panel)
+    if (minFrameMs > 0 && ts - lastRenderTs < minFrameMs - 1) return;
+    lastRenderTs = ts;
+
     const bands = opts.getBands(); // also refreshes audio freq/time buffers
     if (burst > 0) burst = Math.max(0, burst - 0.022);
 
     renderStars(bands);
     renderCover(bands);
     renderViz(opts.getAudioData?.());
-
-    raf = requestAnimationFrame(frame);
+    opts.onFrame?.(bands);
   }
 
   function onResize(): void {
@@ -431,6 +450,7 @@ export function createGlitchScene(opts: Options): GlitchScene {
   function resize(): void {
     sizeStarfield();
     sizeCover();
+    coverIdleDrawn = false; // canvas resize clears it — force one clean redraw
     vizEntries.forEach(sizeViz);
   }
 

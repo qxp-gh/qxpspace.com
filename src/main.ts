@@ -1,5 +1,5 @@
 import "./style.css";
-import { createAudioEngine } from "./audio";
+import { createAudioEngine, type Bands } from "./audio";
 import { createGlitchScene } from "./glitch";
 import { setupIntro } from "./intro";
 import { setupKickLiveStatus } from "./kick";
@@ -136,6 +136,46 @@ function init(): void {
 
   const visualizers = vizDock ? [vizDock] : [];
 
+  /**
+   * Push audio energy onto the document only as compositor-friendly CSS vars.
+   * Values are quantized and written ONLY when the quantized step actually changes,
+   * and the body class flips only on real state change — so a steady or silent
+   * signal triggers zero style invalidation per frame. The vars drive opacity /
+   * transform (GPU-composited) layers, never repaint-heavy paint properties.
+   */
+  const STEPS = 50; // 0..1 in ~0.02 increments
+  const qstep = (v: number): number => Math.round(v * STEPS);
+  let qBass = -1;
+  let qLevel = -1;
+  let qGlitch = -1;
+  let wasPlaying: boolean | null = null;
+
+  const syncAudioReactive = (bandsIn?: Bands): void => {
+    const bands = bandsIn ?? audio.getBands();
+    const playing = audio.isPlaying() && audio.isLive();
+
+    const nBass = qstep(bands.bass);
+    const nLevel = qstep(bands.level);
+    const nGlitch = qstep(playing ? Math.min(1, bands.level * 0.85) : 0);
+
+    if (nBass !== qBass) {
+      qBass = nBass;
+      root.style.setProperty("--bass", String(nBass / STEPS));
+    }
+    if (nLevel !== qLevel) {
+      qLevel = nLevel;
+      root.style.setProperty("--level", String(nLevel / STEPS));
+    }
+    if (nGlitch !== qGlitch) {
+      qGlitch = nGlitch;
+      root.style.setProperty("--glitch", String(nGlitch / STEPS));
+    }
+    if (playing !== wasPlaying) {
+      wasPlaying = playing;
+      document.body.classList.toggle("audio-playing", playing);
+    }
+  };
+
   const scene = createGlitchScene({
     starfield,
     cover,
@@ -144,6 +184,7 @@ function init(): void {
     reducedMotion,
     visualizers,
     getAudioData: () => ({ freq: audio.getFreq(), time: audio.getTime(), live: audio.isLive() }),
+    onFrame: syncAudioReactive,
   });
 
   // starfield runs immediately so it lives behind the PRESS START gate
@@ -151,16 +192,6 @@ function init(): void {
 
   // reflect the persisted/default volume on the slider
   if (volumeEl) volumeEl.value = String(Math.round(audio.getVolume() * 100));
-
-  const syncAudioReactive = (): void => {
-    const bands = audio.getBands();
-    const playing = audio.isPlaying() && audio.isLive();
-    root.style.setProperty("--bass", String(bands.bass));
-    root.style.setProperty("--mid", String(bands.mid));
-    root.style.setProperty("--level", String(bands.level));
-    root.style.setProperty("--glitch", String(playing ? Math.min(1, bands.level * 0.85) : 0));
-    document.body.classList.toggle("audio-playing", playing);
-  };
 
   const updateToggleUI = (muted: boolean): void => {
     if (!audioToggle) return;
@@ -181,11 +212,7 @@ function init(): void {
       if (audioDock) audioDock.hidden = false;
       scene.resize(); // size the now-revealed dock visualizer
       updateToggleUI(audio.isMuted());
-      const tick = (): void => {
-        syncAudioReactive();
-        requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
+      // per-frame reactivity now rides the scene's single rAF loop via onFrame
     },
   });
 
