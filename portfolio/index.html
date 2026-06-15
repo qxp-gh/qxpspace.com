@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#04060a" />
+    <title>Jakub Sládek — Context Engineer & Full Stack Developer</title>
+    <meta
+      name="description"
+      content="Jakub Sládek — context engineer & full stack developer. Builds in Rust, Next.js and AI orchestration: Kukua, 5D.wiki, rozhybejfoto.cz and more. Transmitting from the qxp dimension."
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Jakub Sládek — Context Engineer & Full Stack Developer" />
+    <meta
+      property="og:description"
+      content="Context engineer & full stack developer. Rust, Next.js & AI orchestration — Kukua, 5D.wiki, rozhybejfoto.cz and more. From the qxp dimension."
+    />
+    <meta property="og:image" content="/cover.png" />
+    <meta property="og:url" content="https://qxpspace.com/portfolio/" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" type="image/png" href="/cover.png" />
+
+    <!-- Fonts: VT323 (PS-UI mono) + Orbitron (glitch display) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=VT323&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body class="booting">
+    <!-- ===== SHARED with index.html — keep ids in sync ===== -->
+    <!-- ids relied on by src/boot.ts: #starfield #cover #intro #press-start
+         #boot-flash #audio #audio-dock #audio-toggle #volume #viz -->
+
+    <!-- ===== Global CRT / glitch overlays (fixed, non-interactive) ===== -->
+    <canvas id="starfield" aria-hidden="true"></canvas>
+    <div id="fx-scanlines" aria-hidden="true"></div>
+    <div id="fx-vignette" aria-hidden="true"></div>
+    <div id="fx-crt" aria-hidden="true"></div>
+    <div id="fx-flicker" aria-hidden="true"></div>
+    <div id="boot-flash" aria-hidden="true"></div>
+
+    <!-- Hidden cover canvas: this page has no jewel case, but glitch.ts needs a
+         canvas. Zero-sized → renderCover no-ops. Do not remove. -->
+    <canvas id="cover" width="0" height="0" aria-hidden="true" style="display: none"></canvas>
+
+    <!-- ===== PRESS START gate + disc selector (SHARED layout with homepage) ===== -->
+    <div id="intro" role="dialog" aria-label="Enter Jakub Sládek's portfolio">
+      <div class="intro-inner">
+        <div class="intro-carousel">
+          <button class="disc-arrow disc-arrow--prev" type="button" aria-label="Previous disc">◄</button>
+          <div class="intro-stage">
+            <div id="intro-logo" class="intro-logo glitch" data-text="JS">JS</div>
+            <div id="intro-sub" class="intro-sub">PORTFOLIO // CONTEXT ENGINEER</div>
+          </div>
+          <button class="disc-arrow disc-arrow--next" type="button" aria-label="Next disc">►</button>
+        </div>
+
+        <div id="disc-dots" class="disc-dots" role="tablist" aria-label="Select destination"></div>
+
+        <button id="press-start" class="press-start" type="button" aria-label="Press start to enter the selected destination and start the music">
+          <span class="ps-label">PRESS&nbsp;START</span>
+          <span class="ps-hint">▶ ENTER</span>
+        </button>
+
+        <div class="intro-meta" aria-hidden="true">
+          <span>33.0°N&nbsp;110.1°W</span>
+          <span class="dot-sep">·</span>
+          <span>60 MIN SPACE FUNK</span>
+          <span class="dot-sep">·</span>
+          <span>NTSC&nbsp;U/C</span>
+        </div>
+        <div class="intro-note">◄ ► switch disc · click to unlock audio · loops</div>
+      </div>
+    </div>
+
+    <!-- ===== Main experience ===== -->
+    <main id="stage" aria-hidden="true">
+      <!-- back to the previous disc (normal flow, top of page) -->
+      <div class="page-top">
+        <a class="back-link" data-disc-nav href="/">← back to qxpspace</a>
+        <span></span>
+      </div>
+
+      <!-- ---------- HERO ---------- -->
+      <section id="hero" class="section">
+        <div class="hero-head">
+          <p class="kicker">▶ CONTEXT ENGINEER</p>
+          <h1 class="headline glitch" data-text="JAKUB SLÁDEK">
+            JAKUB <span class="hl-accent">SLÁDEK</span>
+          </h1>
+          <p class="tagline">full stack · rust · ai orchestration</p>
+        </div>
+
+        <a class="scroll-hint" href="#builds" aria-label="Scroll to the work">
+          <span>VIEW THE WORK</span>
+          <span class="chev" aria-hidden="true">▾</span>
+        </a>
+      </section>
+
+      <!-- ---------- WHO I AM ---------- -->
+      <section id="who" class="section">
+        <header class="section-head">
+          <h2 class="section-title glitch" data-text="WHO I AM">WHO I AM</h2>
+          <p class="section-kicker">// context engineer · full stack</p>
+        </header>
+
+        <div class="manifesto">
+          <p class="manifesto-lead">
+            I'm <strong>Jakub Sládek</strong> — a context engineer who <em>orchestrates</em>
+            intelligent systems instead of just writing code. <span class="hl">Not a vibe coder.</span>
+          </p>
+          <p>
+            I work the full stack — <span class="hl">Rust</span> backends,
+            <span class="hl">Next.js</span> frontends — wiring up AI until the machine starts to think
+            with me. I got into programming in 2018 tinkering with Steam bots in Node.js, ran the
+            corporate PHP gauntlet, then went independent to build things that matter.
+          </p>
+          <p>
+            When I'm not shipping I'm running trails or experimenting with biohacking — most of my best
+            ideas come mid-run. <em>Balance is in cycles.</em>
+          </p>
+        </div>
+      </section>
+
+      <!-- ---------- BUILDS ---------- -->
+      <section id="builds" class="section">
+        <header class="section-head">
+          <h2 class="section-title glitch" data-text="BUILDS">BUILDS</h2>
+          <p class="section-kicker">// what I've shipped &amp; what's cooking</p>
+        </header>
+
+        <nav class="tiles builds-grid" aria-label="Projects">
+          <!-- 01 · Kukua (not yet public) -->
+          <article class="tile tile--project" style="--tile-color: var(--moon)">
+            <span class="tile-index">01</span>
+            <span class="tile-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2 21 7v10l-9 5-9-5V7l9-5Z"/><path d="M12 12 21 7M12 12v10M12 12 3 7"/></svg>
+            </span>
+            <span class="tile-body">
+              <span class="status-badge status-badge--launch">launch-ready</span>
+              <span class="tile-name">Kukua</span>
+              <span class="tile-handle">Rust · Axum · Leptos WASM</span>
+              <span class="tile-desc">Single-tenant CRM &amp; productivity tool built entirely in Rust — a Claude-powered AI assistant plus a built-in MCP server that exposes its tooling to external AI clients.</span>
+              <span class="tile-tags">
+                <span class="tag">Rust</span><span class="tag">Axum</span><span class="tag">Leptos</span><span class="tag">Claude</span><span class="tag">MCP</span><span class="tag">PostgreSQL</span>
+              </span>
+            </span>
+          </article>
+
+          <!-- 02 · Czech e-learning platform (client work, anonymized — pre-launch) -->
+          <article class="tile tile--project" style="--tile-color: var(--amber)">
+            <span class="tile-index">02</span>
+            <span class="tile-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2c.6 5.2 4.8 9.4 10 10-5.2.6-9.4 4.8-10 10-.6-5.2-4.8-9.4-10-10 5.2-.6 9.4-4.8 10-10Z"/></svg>
+            </span>
+            <span class="tile-body">
+              <span class="status-badge status-badge--staging">staging</span>
+              <span class="tile-name">Czech e-learning platform</span>
+              <span class="tile-handle">Payload CMS · Next.js 16</span>
+              <span class="tile-desc">Backend lead on a Czech transformation / e-learning platform — a flagship course, e-shop and community on Payload CMS, Next.js 16 and PostgreSQL, with checkout and a member area.</span>
+              <span class="tile-tags">
+                <span class="tag">Payload CMS</span><span class="tag">Next.js 16</span><span class="tag">React 19</span><span class="tag">PostgreSQL</span><span class="tag">Coolify</span>
+              </span>
+            </span>
+          </article>
+
+          <!-- 03 · 5D.wiki (live, closed beta) -->
+          <a class="tile tile--project" style="--tile-color: var(--cyan)" href="https://5d.wiki" target="_blank" rel="noopener noreferrer">
+            <span class="tile-index">03</span>
+            <span class="tile-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2 22 12 12 22 2 12Z"/><path d="M12 7 17 12 12 17 7 12Z"/></svg>
+            </span>
+            <span class="tile-body">
+              <span class="status-badge status-badge--beta">closed beta</span>
+              <span class="tile-name">5D.wiki</span>
+              <span class="tile-handle">Rust/Axum · SvelteKit · Qdrant</span>
+              <span class="tile-desc">A Czech wiki and retrieval-grounded AI chatbot over ~4,935 Q&amp;A distilled from 100+ archival interview transcripts — semantic search and reranking, with a warmer story mode.</span>
+              <span class="tile-tags">
+                <span class="tag">Rust</span><span class="tag">SvelteKit</span><span class="tag">Qdrant</span><span class="tag">Gemini</span><span class="tag">RAG</span>
+              </span>
+            </span>
+            <span class="tile-go" aria-hidden="true">↗</span>
+          </a>
+
+          <!-- 04 · Locato (beta, paused) -->
+          <article class="tile tile--project" style="--tile-color: var(--ink-dim)">
+            <span class="tile-index">04</span>
+            <span class="tile-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 22s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            </span>
+            <span class="tile-body">
+              <span class="status-badge status-badge--paused">beta · paused</span>
+              <span class="tile-name">Locato</span>
+              <span class="tile-handle">Laravel · PostGIS · Next.js</span>
+              <span class="tile-desc">Local-commerce discovery — find products in nearby brick-and-mortar shops on an interactive map. Laravel + PostGIS backend with Heureka &amp; Google Places enrichment and resilient scraping.</span>
+              <span class="tile-tags">
+                <span class="tag">Laravel</span><span class="tag">PostGIS</span><span class="tag">Next.js</span><span class="tag">GraphQL</span>
+              </span>
+            </span>
+          </article>
+
+          <!-- 05 · rozhybejfoto.cz (live) -->
+          <a class="tile tile--project" style="--tile-color: var(--green)" href="https://rozhybejfoto.cz" target="_blank" rel="noopener noreferrer">
+            <span class="tile-index">05</span>
+            <span class="tile-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m10 9 5 3-5 3V9Z"/></svg>
+            </span>
+            <span class="tile-body">
+              <span class="status-badge status-badge--live"><span class="live-dot"></span>live</span>
+              <span class="tile-name">rozhybejfoto.cz</span>
+              <span class="tile-handle">Next.js · AI · PostgreSQL</span>
+              <span class="tile-desc">AI-powered photo animation — upload a photo and get a stunning animated video in about a minute. Simple, fast, and private.</span>
+              <span class="tile-tags">
+                <span class="tag">Next.js</span><span class="tag">AI</span><span class="tag">Docker</span><span class="tag">PostgreSQL</span>
+              </span>
+            </span>
+            <span class="tile-go" aria-hidden="true">↗</span>
+          </a>
+        </nav>
+      </section>
+
+      <!-- ---------- TRAJECTORY ---------- -->
+      <section id="trajectory" class="section">
+        <header class="section-head">
+          <h2 class="section-title glitch" data-text="TRAJECTORY">TRAJECTORY</h2>
+          <p class="section-kicker">// where I've been</p>
+        </header>
+
+        <div class="timeline">
+          <article class="xp-item">
+            <div class="xp-head">
+              <span class="xp-role">Context Engineer &amp; Independent Developer</span>
+              <span class="xp-period">02/2025 — Present</span>
+            </div>
+            <p class="xp-desc">Orchestrating intelligent systems with spec-driven development and AI-powered workflows — Rust backends, Next.js frontends, self-hosted infrastructure on Coolify / Hetzner.</p>
+          </article>
+          <article class="xp-item">
+            <div class="xp-head">
+              <span class="xp-role">PHP Developer · NaniNails</span>
+              <span class="xp-period">09/2022 — 12/2024</span>
+            </div>
+            <p class="xp-desc">Built custom PHP libraries for shipping APIs and data-driven reporting at Czechia's leading nail-cosmetics company; cut backend response times ~40% via GraphQL.</p>
+          </article>
+          <article class="xp-item">
+            <div class="xp-head">
+              <span class="xp-role">Web Developer · Webdevel</span>
+              <span class="xp-period">06/2021 — 08/2022</span>
+            </div>
+            <p class="xp-desc">Custom WordPress themes and WooCommerce solutions — performance tuning and responsive design for e-commerce clients.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ---------- STACK ---------- -->
+      <section id="stack" class="section">
+        <header class="section-head">
+          <h2 class="section-title glitch" data-text="STACK">STACK</h2>
+          <p class="section-kicker">// tools of the trade</p>
+        </header>
+
+        <div class="skills-grid">
+          <div class="skill-cat">
+            <h3>Frontend</h3>
+            <div class="skill-list">
+              <span class="tag">React</span><span class="tag">Next.js</span><span class="tag">TypeScript</span><span class="tag">Vite</span><span class="tag">Leptos</span><span class="tag">Tauri</span>
+            </div>
+          </div>
+          <div class="skill-cat">
+            <h3>Backend</h3>
+            <div class="skill-list">
+              <span class="tag">Rust (Axum)</span><span class="tag">PHP</span><span class="tag">Laravel</span><span class="tag">Node.js</span><span class="tag">GraphQL</span><span class="tag">FastAPI</span>
+            </div>
+          </div>
+          <div class="skill-cat">
+            <h3>Infra &amp; DevOps</h3>
+            <div class="skill-list">
+              <span class="tag">Docker</span><span class="tag">Linux</span><span class="tag">Hetzner</span><span class="tag">Coolify</span><span class="tag">DigitalOcean</span>
+            </div>
+          </div>
+          <div class="skill-cat">
+            <h3>Databases</h3>
+            <div class="skill-list">
+              <span class="tag">PostgreSQL</span><span class="tag">Redis</span><span class="tag">MySQL</span><span class="tag">Qdrant</span>
+            </div>
+          </div>
+          <div class="skill-cat">
+            <h3>AI &amp; Orchestration</h3>
+            <div class="skill-list">
+              <span class="tag">Context Engineering</span><span class="tag">AI Orchestration</span><span class="tag">Spec-Driven Dev</span><span class="tag">Claude Code</span><span class="tag">MCP</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- CONTACT ---------- -->
+      <section id="contact" class="section">
+        <header class="section-head">
+          <h2 class="section-title glitch" data-text="CONTACT">CONTACT</h2>
+          <p class="section-kicker">// open a channel</p>
+        </header>
+
+        <nav class="tiles" aria-label="Contact channels">
+          <a class="tile" style="--tile-color: var(--green)" href="mailto:jakub.sladek@proton.me">
+            <span class="tile-index">01</span>
+            <span class="tile-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+            </span>
+            <span class="tile-body">
+              <span class="tile-name">Mail</span>
+              <span class="tile-handle">jakub.sladek@proton.me</span>
+              <span class="tile-desc">project enquiries · let's build something</span>
+            </span>
+            <span class="tile-go" aria-hidden="true">↗</span>
+          </a>
+
+          <a class="tile" style="--tile-color: var(--purple)" href="https://github.com/qxp-gh" target="_blank" rel="noopener noreferrer">
+            <span class="tile-index">02</span>
+            <span class="tile-glyph" aria-hidden="true">
+              <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+            </span>
+            <span class="tile-body">
+              <span class="tile-name">GitHub</span>
+              <span class="tile-handle">qxp-gh</span>
+              <span class="tile-desc">source · experiments · the build logs</span>
+            </span>
+            <span class="tile-go" aria-hidden="true">↗</span>
+          </a>
+
+          <a class="tile" style="--tile-color: var(--cyan)" href="https://x.com/qxpspacecom" target="_blank" rel="noopener noreferrer">
+            <span class="tile-index">03</span>
+            <span class="tile-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg>
+            </span>
+            <span class="tile-body">
+              <span class="tile-name">X</span>
+              <span class="tile-handle">@qxpspacecom</span>
+              <span class="tile-desc">signal &amp; noise · in real time</span>
+            </span>
+            <span class="tile-go" aria-hidden="true">↗</span>
+          </a>
+        </nav>
+      </section>
+    </main>
+
+    <!-- ===== Footer ===== -->
+    <footer id="footer" aria-hidden="true">
+      <div class="footer-grid">
+        <div class="footer-back">
+          <a class="back-link" data-disc-nav href="/">← back to qxpspace</a>
+        </div>
+
+        <div class="footer-glyphs">
+          <div class="glyphs" id="footer-glyphs"></div>
+          <p class="footer-coords">33.0°N · 110.1°W</p>
+        </div>
+
+        <div class="footer-credit">
+          <p>context engineer &amp; full stack developer</p>
+          <p class="footer-brand">qxpspace.com/portfolio · © <span id="year">2026</span> Jakub Sládek</p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- ===== Floating audio dock: visualizer + mute + volume (SHARED ids) ===== -->
+    <div id="audio-dock" class="audio-dock" aria-label="Audio controls" hidden>
+      <canvas id="viz" class="viz viz--dock" aria-hidden="true"></canvas>
+      <button id="audio-toggle" class="audio-toggle" type="button" aria-label="Mute audio" aria-pressed="false">
+        <svg class="ic ic-on" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
+          <path d="M16 8.6a4 4 0 0 1 0 6.8M18.6 6a7 7 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+        </svg>
+        <svg class="ic ic-off" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
+          <path d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+        </svg>
+      </button>
+      <input id="volume" class="volume" type="range" min="0" max="100" value="45" step="1" aria-label="Volume" />
+    </div>
+
+    <!-- ===== Audio element (source of truth for Web Audio, SHARED id) ===== -->
+    <audio id="audio" src="/audio/playlist.mp3" loop preload="auto" crossorigin="anonymous" playsinline></audio>
+
+    <script type="module" src="/src/portfolio.ts"></script>
+  </body>
+</html>

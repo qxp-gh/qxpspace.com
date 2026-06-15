@@ -24,8 +24,14 @@ export interface Bands {
 }
 
 export interface AudioEngine {
-  /** Call inside a user gesture. Resumes context + starts looped, faded-in music. */
-  unlock(): Promise<void>;
+  /**
+   * Call inside a user gesture. Resumes context + starts looped music.
+   * Pass `at` to start at a position (seconds) and `instant` to skip the fade-in
+   * — used to resume seamlessly across a page hop.
+   */
+  unlock(opts?: { at?: number; instant?: boolean }): Promise<void>;
+  /** Current playback position in seconds (for handing off across a page hop). */
+  getCurrentTime(): number;
   /** Toggle mute (keeps the track playing so visuals stay reactive). Returns the new muted state. */
   toggleMute(): boolean;
   isMuted(): boolean;
@@ -72,6 +78,7 @@ export function createAudioEngine(audioEl: HTMLAudioElement): AudioEngine {
   let freq: Uint8Array<ArrayBuffer> | null = null;
   let time: Uint8Array<ArrayBuffer> | null = null;
   let started = false;
+  let unlocking = false;
   let muted = false;
   let live = false;
   let volume = loadVolume();
@@ -101,27 +108,44 @@ export function createAudioEngine(audioEl: HTMLAudioElement): AudioEngine {
     gain.connect(ctx.destination);
   }
 
-  async function unlock(): Promise<void> {
-    if (started) return;
-    started = true;
+  async function unlock(opts?: { at?: number; instant?: boolean }): Promise<void> {
+    if (started || unlocking) return;
+    unlocking = true;
 
     if (!ctx) buildGraph();
-    if (ctx && ctx.state === "suspended") void ctx.resume();
+    if (ctx && ctx.state === "suspended") {
+      try {
+        await ctx.resume();
+      } catch {
+        /* stays suspended — retried on the next gesture */
+      }
+    }
 
     audioEl.volume = 1; // output level is governed by the gain node
     try {
-      audioEl.currentTime = 0;
+      audioEl.currentTime = opts?.at ?? 0;
       await audioEl.play();
+      // latch ONLY on success, so an autoplay block (cross-page jump, Safari)
+      // can be retried by a later user gesture instead of being stuck muted.
+      started = true;
+      if (ctx && gain) {
+        const now = ctx.currentTime;
+        const target = Math.max(0.0001, muted ? 0.0001 : volume);
+        gain.gain.cancelScheduledValues(now);
+        if (opts?.instant) {
+          // resuming across a page hop — jump straight to volume, no fade-in
+          gain.gain.setValueAtTime(target, now);
+        } else {
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.linearRampToValueAtTime(target, now + FADE_SECONDS);
+        }
+      }
     } catch {
-      // Autoplay still blocked (e.g. headless) — visuals fall back to idle motion.
+      // Autoplay still blocked — visuals fall back to idle motion; the boot
+      // arms a one-shot gesture listener that calls unlock() again.
       audioEl.volume = muted ? 0 : volume;
-    }
-
-    if (ctx && gain) {
-      const now = ctx.currentTime;
-      gain.gain.cancelScheduledValues(now);
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.linearRampToValueAtTime(Math.max(0.0001, muted ? 0.0001 : volume), now + FADE_SECONDS);
+    } finally {
+      unlocking = false;
     }
   }
 
@@ -152,6 +176,7 @@ export function createAudioEngine(audioEl: HTMLAudioElement): AudioEngine {
   }
 
   const getVolume = (): number => volume;
+  const getCurrentTime = (): number => audioEl.currentTime;
   const isMuted = (): boolean => muted;
   const isPlaying = (): boolean => started && !audioEl.paused;
   const isLive = (): boolean => live;
@@ -206,6 +231,7 @@ export function createAudioEngine(audioEl: HTMLAudioElement): AudioEngine {
     isLive,
     getBands,
     getVolume,
+    getCurrentTime,
     setVolume,
     getFreq,
     getTime,

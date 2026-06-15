@@ -1084,6 +1084,9 @@ body.entering #intro {
     0 0 24px rgba(0, 255, 156, 0.5),
     0 0 70px rgba(0, 224, 255, 0.25);
   line-height: 0.9;
+  /* reserve room for descenders (q, p) so the logo can't overlap the sub-line
+     at small/short viewports where the flex gap shrinks */
+  padding-bottom: 0.18em;
 }
 
 .intro-sub {
@@ -1262,4 +1265,306 @@ body.entering #intro {
   .jewel {
     transform: none !important;
   }
+}
+
+/* ============================================================
+   PORTFOLIO PAGE (/portfolio) — additive only.
+   Reuses the qxp design system + tokens; nothing above is changed.
+   ============================================================ */
+
+/* back-to-homepage link (top of page + footer) — mirrors footer-credit a */
+.page-top {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(1180px, 100%);
+  margin-inline: auto;
+  padding: clamp(1.2rem, 3vh, 2rem) var(--gutter) 0;
+}
+
+.back-link {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  transition: color 0.18s ease;
+}
+
+.back-link:hover,
+.back-link:focus-visible {
+  color: var(--green);
+  outline: none;
+}
+
+/* BUILDS grid — flex+wrap+center so the trailing row (5 cards → 3 + 2) stays
+   balanced instead of stranding an empty grid cell. Cards grow to fill the row
+   but cap at 360px so the 2-card row reads as intentional, not stretched.
+   Only the portfolio's grid is overridden; the homepage .tiles stays a 3-up. */
+.builds-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.builds-grid .tile {
+  flex: 1 1 280px;
+  max-width: 360px;
+}
+
+/* Non-clickable project cards (<article>) must not signal clickability:
+   suppress the anchor lift/glow/arrow affordances. Higher specificity than
+   the base .tile:hover, so this overrides without editing the base rule. */
+article.tile {
+  cursor: default;
+}
+
+article.tile:hover,
+article.tile:focus-visible {
+  transform: none;
+  border-color: var(--edge);
+  box-shadow: none;
+}
+
+article.tile:hover::before,
+article.tile:focus-visible::before {
+  opacity: 0.14;
+}
+
+/* status badge — modelled on .live-badge, color carries the meaning.
+   green(+dot)=live · moon=launch-ready · amber=staging · cyan=beta · dim=paused */
+.status-badge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+  padding: 0.12rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--badge-color, var(--ink-dim));
+  border: 1px solid color-mix(in oklab, var(--badge-color, var(--ink-dim)) 60%, transparent);
+  border-radius: 4px;
+  background: color-mix(in oklab, var(--badge-color, var(--ink-dim)) 12%, transparent);
+}
+
+.status-badge--live { --badge-color: var(--green); }
+.status-badge--launch { --badge-color: var(--moon); }
+.status-badge--staging { --badge-color: var(--amber); }
+.status-badge--beta { --badge-color: var(--cyan); }
+.status-badge--paused { --badge-color: var(--ink-dim); }
+
+/* tech-tag chips (project cards + skills grid) */
+.tile-tags,
+.skill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.tile-tags {
+  margin-top: 0.6rem;
+}
+
+.tag {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  padding: 0.05rem 0.45rem;
+  color: var(--ink-dim);
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* TRAJECTORY — experience timeline */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.1rem, 2.5vw, 1.7rem);
+  max-width: 900px;
+}
+
+.xp-item {
+  padding-left: 1.1rem;
+  border-left: 1px solid var(--edge);
+}
+
+.xp-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.9rem;
+  margin-bottom: 0.3rem;
+}
+
+.xp-role {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.1rem, 2.4vw, 1.4rem);
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.xp-period {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  letter-spacing: 0.12em;
+  color: var(--cyan);
+}
+
+.xp-desc {
+  margin: 0;
+  font-size: clamp(0.98rem, 1.8vw, 1.12rem);
+  line-height: 1.55;
+  color: var(--ink-dim);
+}
+
+/* STACK — skills grid */
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: clamp(0.9rem, 2vw, 1.4rem);
+}
+
+.skill-cat {
+  padding: clamp(1rem, 2vw, 1.4rem);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.skill-cat h3 {
+  margin: 0 0 0.7rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+
+/* footer back-link column inherits footer-grid placement */
+.footer-back {
+  text-align: left;
+}
+
+@media (max-width: 880px) {
+  .footer-back {
+    text-align: center;
+  }
+}
+
+/* ============================================================
+   PRESS START gate — disc selector carousel
+   ============================================================ */
+
+.intro-carousel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.4rem, 1.8vw, 1.2rem);
+  max-width: 100%;
+}
+
+.intro-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.3rem, 1.4vh, 0.7rem);
+  /* hold a stable width so the ◄ ► arrows don't shift as the logo changes */
+  min-width: clamp(160px, 60vw, 420px);
+}
+
+.disc-arrow {
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  color: var(--green);
+  font-family: var(--font-mono);
+  font-size: clamp(1.2rem, 3.5vw, 2.1rem);
+  line-height: 1;
+  padding: clamp(0.3rem, 1.1vw, 0.6rem) clamp(0.45rem, 1.4vw, 0.85rem);
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.disc-arrow:hover,
+.disc-arrow:focus-visible {
+  border-color: var(--green);
+  color: var(--moon);
+  transform: scale(1.06);
+  box-shadow: 0 0 26px rgba(0, 255, 156, 0.3);
+  outline: none;
+}
+
+.disc-arrow:active {
+  transform: scale(0.96);
+}
+
+.disc-arrow[hidden] {
+  display: none;
+}
+
+.disc-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.disc-dots[hidden] {
+  display: none;
+}
+
+.disc-dot {
+  width: 11px;
+  height: 11px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--edge);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.disc-dot:hover,
+.disc-dot:focus-visible {
+  border-color: var(--green);
+  transform: scale(1.15);
+  outline: none;
+}
+
+.disc-dot.is-active {
+  background: var(--green);
+  border-color: var(--green);
+  box-shadow: 0 0 12px rgba(0, 255, 156, 0.75);
+}
+
+/* quick glitch flick when the disc changes */
+body.disc-swap .intro-logo {
+  animation: disc-flick 0.26s steps(2, end);
+}
+
+@keyframes disc-flick {
+  0% { opacity: 1; transform: translateX(0); }
+  40% { opacity: 0.35; transform: translateX(-3px); }
+  70% { opacity: 0.7; transform: translateX(2px); }
+  100% { opacity: 1; transform: translateX(0); }
 }

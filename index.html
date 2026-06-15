@@ -41,15 +41,23 @@
     <div id="fx-flicker" aria-hidden="true"></div>
     <div id="boot-flash" aria-hidden="true"></div>
 
-    <!-- ===== PRESS START intro gate ===== -->
+    <!-- ===== PRESS START gate + disc selector (SHARED layout with /portfolio) ===== -->
     <div id="intro" role="dialog" aria-label="Enter qxp space">
       <div class="intro-inner">
-        <div class="intro-logo glitch" data-text="qxp">qxp</div>
-        <div class="intro-sub">PERSONAL DIGITAL DIMENSION</div>
+        <div class="intro-carousel">
+          <button class="disc-arrow disc-arrow--prev" type="button" aria-label="Previous disc">◄</button>
+          <div class="intro-stage">
+            <div id="intro-logo" class="intro-logo glitch" data-text="qxp">qxp</div>
+            <div id="intro-sub" class="intro-sub">PERSONAL DIGITAL DIMENSION</div>
+          </div>
+          <button class="disc-arrow disc-arrow--next" type="button" aria-label="Next disc">►</button>
+        </div>
 
-        <button id="press-start" class="press-start" type="button" aria-label="Press start to enter qxp space and start the music">
+        <div id="disc-dots" class="disc-dots" role="tablist" aria-label="Select destination"></div>
+
+        <button id="press-start" class="press-start" type="button" aria-label="Press start to enter the selected destination and start the music">
           <span class="ps-label">PRESS&nbsp;START</span>
-          <span class="ps-hint">▶ ENTER THE SPACE</span>
+          <span class="ps-hint">▶ ENTER</span>
         </button>
 
         <div class="intro-meta" aria-hidden="true">
@@ -59,12 +67,18 @@
           <span class="dot-sep">·</span>
           <span>NTSC&nbsp;U/C</span>
         </div>
-        <div class="intro-note">click to unlock audio · loops · best with sound on</div>
+        <div class="intro-note">◄ ► switch disc · click to unlock audio · loops</div>
       </div>
     </div>
 
     <!-- ===== Main experience ===== -->
     <main id="stage" aria-hidden="true">
+      <!-- forward to the next disc (mirrors /portfolio's back-link) -->
+      <div class="page-top">
+        <span></span>
+        <a class="back-link" data-disc-nav href="/portfolio/">portfolio →</a>
+      </div>
+
       <!-- ---------- HERO ---------- -->
       <section id="hero" class="section">
         <div class="hero-head">
@@ -183,6 +197,7 @@
           <p>
             The good runs get cut, polished and dropped on YouTube. Everything else lives here, in
             the space — <span class="hl">from another dimension</span>, transmitting on a loop.
+            The signal carries <a href="/portfolio/" data-disc-nav>the work itself</a> — one channel over.
           </p>
         </div>
       </section>
