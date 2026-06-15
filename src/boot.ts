@@ -1,25 +1,26 @@
 /**
- * boot.ts — the shared qxp experience boot, used by BOTH the homepage
- * (src/main.ts) and the /portfolio page (src/portfolio.ts).
+ * boot.ts — the shared qxp experience shell + client-side soft-nav router.
  *
- * Wires the Web Audio engine, the single-rAF glitch scene (starfield + cover +
- * dock visualizer) and the PRESS START intro gate together, and bridges audio
- * energy onto the document as compositor-only CSS vars. Pages add their own
- * page-specific bits (homepage: Kick status, overscroll easter egg; portfolio:
- * its static content) around this call.
+ * Runs ONCE per real document load. It owns the persistent layer that must
+ * survive page switches — the Web Audio engine, the single-rAF glitch scene, the
+ * audio dock and the intro gate — all of which live OUTSIDE #stage/#footer in the
+ * markup. Switching pages is therefore a SOFT navigation: fetch the target HTML,
+ * swap only #stage + #footer (+ <title>), and re-mount the page-specific bits.
+ * The AudioContext never tears down, so music keeps playing seamlessly with NO
+ * gate, NO flash and NO audio re-unlock. A fresh document load (deep link / first
+ * visit) still shows the PRESS START gate once to unlock audio with a gesture.
  *
- * The DOM contract is by `id` — every page must ship the same FX/intro/dock/
- * audio markup ids (#intro #press-start #boot-flash #audio #starfield #cover
- * #audio-dock #audio-toggle #volume #viz), or the matching feature silently
- * no-ops. The `#cover` canvas may be hidden/zero-sized on pages without a jewel
- * case (renderCover then no-ops); it just must exist so glitch.ts has a canvas.
+ * DOM contract (by id): #intro #press-start #boot-flash #audio #starfield #cover
+ * #audio-dock #audio-toggle #volume #viz #stage #footer. #cover lives INSIDE
+ * #stage on every page so it travels with a soft-nav swap (re-bound via
+ * scene.setCover); on pages without a jewel case it is a hidden 0-size canvas.
  */
 
 import "./style.css";
 import { createAudioEngine, type Bands } from "./audio";
 import { createGlitchScene } from "./glitch";
-import { setupIntro } from "./intro";
-import { markHandoff, takeHandoff } from "./handoff";
+import { setupIntro, DESTINATIONS } from "./intro";
+import { setupKickLiveStatus } from "./kick";
 
 export const $ = <T extends HTMLElement = HTMLElement>(id: string): T | null =>
   document.getElementById(id) as T | null;
@@ -45,56 +46,104 @@ export function buildGlyphs(container: HTMLElement | null): void {
   ).join("");
 }
 
+/* ---------- overscroll-up easter egg (homepage route only) ----------
+ * Pulling up past the top fades the foreground to reveal the starfield. Returns
+ * a cleanup that removes its window listeners — the router calls it when the
+ * homepage route unmounts so a soft-nav away doesn't leak listeners. */
+function setupOverscrollFade(root: HTMLElement): () => void {
+  const TOP_EPS = 2;
+  const MAX_OVERSCROLL = 600;
+  let overscroll = 0;
+  let touchY = 0;
+
+  const apply = (): void => {
+    root.style.setProperty("--reveal", String(1 - Math.min(1, overscroll / MAX_OVERSCROLL)));
+  };
+
+  const onWheel = (e: WheelEvent): void => {
+    const atTop = window.scrollY <= TOP_EPS;
+    if (e.deltaY < 0 && atTop) {
+      overscroll = Math.min(MAX_OVERSCROLL, overscroll - e.deltaY);
+      apply();
+      e.preventDefault();
+    } else if (overscroll > 0 && e.deltaY > 0) {
+      overscroll = Math.max(0, overscroll - e.deltaY);
+      apply();
+      if (overscroll > 0) e.preventDefault();
+    } else if (overscroll > 0 && !atTop) {
+      overscroll = 0;
+      apply();
+    }
+  };
+
+  const onTouchStart = (e: TouchEvent): void => {
+    const t = e.touches[0];
+    if (t) touchY = t.clientY;
+  };
+
+  const onTouchMove = (e: TouchEvent): void => {
+    const t = e.touches[0];
+    if (!t) return;
+    const dy = t.clientY - touchY;
+    touchY = t.clientY;
+    const atTop = window.scrollY <= TOP_EPS;
+    if (dy > 0 && atTop) {
+      overscroll = Math.min(MAX_OVERSCROLL, overscroll + dy);
+      apply();
+    } else if (overscroll > 0 && dy < 0) {
+      overscroll = Math.max(0, overscroll + dy);
+      apply();
+    }
+  };
+
+  const onScroll = (): void => {
+    if (overscroll > 0 && window.scrollY > TOP_EPS) {
+      overscroll = 0;
+      apply();
+    }
+  };
+
+  window.addEventListener("wheel", onWheel, { passive: false });
+  window.addEventListener("touchstart", onTouchStart, { passive: true });
+  window.addEventListener("touchmove", onTouchMove, { passive: true });
+  window.addEventListener("scroll", onScroll, { passive: true });
+
+  return () => {
+    window.removeEventListener("wheel", onWheel);
+    window.removeEventListener("touchstart", onTouchStart);
+    window.removeEventListener("touchmove", onTouchMove);
+    window.removeEventListener("scroll", onScroll);
+    root.style.setProperty("--reveal", "1");
+  };
+}
+
 export interface BootOptions {
   /** Source for the glitch cover canvas. Defaults to /cover.png. */
   coverSrc?: string;
-  /** Runs after the intro boot transition completes (page chrome already revealed). */
-  onReady?: () => void;
-  /** id of the destination this page is (for the gate's disc selector). */
+  /** id of the route this document loaded as (initial mount). */
   current?: string;
 }
 
-/**
- * Boot the shared audio + glitch + intro experience. Idempotent-safe per page
- * load. Returns early (leaving the page static) only if the core FX markup is
- * missing — the same guard the homepage has always had.
- */
 export function bootExperience(opts: BootOptions = {}): void {
   const audioEl = $<HTMLAudioElement>("audio");
   const starfield = $<HTMLCanvasElement>("starfield");
   const cover = $<HTMLCanvasElement>("cover");
-  const stage = $("stage");
-  const footer = $("footer");
   const audioDock = $("audio-dock");
   const audioToggle = $<HTMLButtonElement>("audio-toggle");
   const volumeEl = $<HTMLInputElement>("volume");
   const vizDock = $<HTMLCanvasElement>("viz");
-  const yearEl = $("year");
   const root = document.documentElement;
-
-  if (yearEl) yearEl.textContent = String(new Date().getFullYear());
 
   if (!audioEl || !starfield || !cover) return;
 
   const audio = createAudioEngine(audioEl);
-
-  // Arrived from an in-experience disc switch while music was playing? A single-use
-  // hand-off token tells us to skip the gate (no flash) and resume the track at its
-  // position. No token → first/normal load → the gate shows, which is required to
-  // get a valid user gesture to start audio (mandatory on iOS).
-  const handoff = takeHandoff();
-  const resumeOpts = handoff ? { at: handoff.at, instant: true } : undefined;
-
   const visualizers = vizDock ? [vizDock] : [];
 
   /**
    * Push audio energy onto the document only as compositor-friendly CSS vars.
-   * Values are quantized and written ONLY when the quantized step actually changes,
-   * and the body class flips only on real state change — so a steady or silent
-   * signal triggers zero style invalidation per frame. The vars drive opacity /
-   * transform (GPU-composited) layers, never repaint-heavy paint properties.
+   * Quantized + written only on change, so a steady/silent signal costs nothing.
    */
-  const STEPS = 50; // 0..1 in ~0.02 increments
+  const STEPS = 50;
   const qstep = (v: number): number => Math.round(v * STEPS);
   let qBass = -1;
   let qLevel = -1;
@@ -137,11 +186,8 @@ export function bootExperience(opts: BootOptions = {}): void {
     getAudioData: () => ({ freq: audio.getFreq(), time: audio.getTime(), live: audio.isLive() }),
     onFrame: syncAudioReactive,
   });
+  scene.start(); // starfield runs behind the gate
 
-  // starfield runs immediately so it lives behind the PRESS START gate
-  scene.start();
-
-  // reflect the persisted/default volume on the slider
   if (volumeEl) volumeEl.value = String(Math.round(audio.getVolume() * 100));
 
   const updateToggleUI = (muted: boolean): void => {
@@ -152,46 +198,104 @@ export function bootExperience(opts: BootOptions = {}): void {
     syncAudioReactive();
   };
 
-  /**
-   * Switch to another disc's page. If music is playing, hand off (skip gate +
-   * resume at position); otherwise write nothing so the destination shows its
-   * gate (whose PRESS START is the valid gesture to start audio on iOS). Play the
-   * "disc swap" burst, then navigate.
-   */
-  const goToPage = (path: string): void => {
-    if (audio.isPlaying()) {
-      markHandoff({ at: audio.getCurrentTime(), muted: audio.isMuted(), volume: audio.getVolume() });
+  /* ---------------- per-route mount / unmount ---------------- */
+
+  // Runs on first load AND after every soft-nav. Returns the cleanup the router
+  // calls before mounting the next route (so homepage-only listeners/pollers
+  // don't leak across switches). Idempotent bits (glyphs, year) just re-run.
+  const mountRoute = (id: string): (() => void) => {
+    const yearEl = $("year");
+    if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+    buildGlyphs($("footer-glyphs"));
+    const cov = $<HTMLCanvasElement>("cover");
+    if (cov) scene.setCover(cov); // re-point the glitch render target at the new #cover
+
+    const cleanups: Array<() => void> = [];
+    if (id === "space") {
+      buildGlyphs($("hero-glyphs"));
+      cleanups.push(setupKickLiveStatus($("kick-tile")));
+      cleanups.push(setupOverscrollFade(root));
     }
-    document.body.classList.add("glitch-burst");
-    const flash = $("boot-flash");
-    if (flash) {
-      flash.style.transition = "none";
-      flash.style.opacity = "0.85";
-    }
-    scene.boot();
-    window.setTimeout(() => {
-      window.location.href = path;
-    }, 220);
+    return () => {
+      for (const c of cleanups) c();
+    };
   };
 
-  // In-experience disc navigation: page-top / footer / manifesto links carrying
-  // data-disc-nav route through goToPage (seamless). Modifier-clicks fall through
-  // to a normal new-tab navigation.
+  let routeCleanup: () => void = () => {};
+  let navigating = false;
+
+  const pageId = (pathname: string): string | null => {
+    let p = pathname.replace(/index\.html$/, "");
+    if (p.length > 1 && !p.endsWith("/")) p += "/";
+    const hit = DESTINATIONS.find((d) => d.path === p);
+    return hit ? hit.id : null;
+  };
+
+  /* ---------------- soft navigation ---------------- */
+
+  // Swap #stage + #footer + <title> in place — no document reload, so audio and
+  // the glitch scene keep running. Falls back to a hard navigation on any failure.
+  const navigate = async (rawPath: string, push: boolean): Promise<void> => {
+    const url = new URL(rawPath, location.href);
+    const id = url.origin === location.origin ? pageId(url.pathname) : null;
+    if (!id) {
+      window.location.href = rawPath; // external / unknown → real navigation
+      return;
+    }
+    if (navigating) return;
+    navigating = true;
+    scene.boot(); // "disc swap" glitch burst (no reload)
+
+    try {
+      const res = await fetch(url.pathname, { credentials: "same-origin" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const doc = new DOMParser().parseFromString(await res.text(), "text/html");
+      const newStage = doc.getElementById("stage");
+      const newFooter = doc.getElementById("footer");
+      const curStage = $("stage");
+      const curFooter = $("footer");
+      if (!newStage || !curStage) throw new Error("no #stage");
+
+      routeCleanup(); // tear down the outgoing route's listeners/pollers
+
+      newStage.removeAttribute("aria-hidden");
+      curStage.replaceWith(document.adoptNode(newStage));
+      if (newFooter && curFooter) {
+        newFooter.removeAttribute("aria-hidden");
+        curFooter.replaceWith(document.adoptNode(newFooter));
+      }
+      document.title = doc.title;
+      if (push) history.pushState({ spa: true }, "", url.pathname);
+      window.scrollTo(0, 0);
+
+      routeCleanup = mountRoute(id);
+    } catch {
+      window.location.href = url.pathname; // network/parse failure → hard nav
+    } finally {
+      navigating = false;
+    }
+  };
+
+  // Intercept in-app disc links (page-top / footer / manifesto). Modifier- and
+  // non-primary clicks fall through to a normal (new-tab) navigation.
   document.addEventListener("click", (e) => {
-    if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     const link = (e.target as HTMLElement).closest?.("a[data-disc-nav]") as HTMLAnchorElement | null;
     const href = link?.getAttribute("href");
     if (!href) return;
     e.preventDefault();
-    goToPage(href);
+    void navigate(href, true);
   });
 
-  // Robust audio-unlock safety net. Once the experience is entered, the next real
-  // user gesture (re)tries unlock() until playback is CONFIRMED, then self-removes.
-  // This is the only reliable iOS path after a gesture-less auto-boot (activation
-  // doesn't survive a navigation) and a backstop if a PRESS START unlock fails.
-  // It deliberately waits for `entered` so taps on the gate's disc arrows don't
-  // start audio before PRESS START. touchend/pointerup/click cover iOS; keydown desktop.
+  window.addEventListener("popstate", () => {
+    void navigate(location.pathname, false);
+  });
+
+  // Robust audio-unlock net: once entered, the next real gesture (re)tries
+  // unlock() until playback is confirmed, then self-removes. Backstop for a
+  // PRESS START whose unlock didn't take (waits for `entered` so taps on the
+  // gate's disc arrows don't start audio early). In the SPA, audio unlocks once
+  // and never tears down, so this fires at most once per session.
   const GESTURES = ["touchend", "pointerup", "click", "keydown"];
   const detachNet = (): void => {
     for (const g of GESTURES) window.removeEventListener(g, tryUnlock);
@@ -201,34 +305,32 @@ export function bootExperience(opts: BootOptions = {}): void {
       detachNet();
       return;
     }
-    if (!document.body.classList.contains("entered")) return; // gate still up
-    void audio.unlock(resumeOpts).then(() => {
+    if (!document.body.classList.contains("entered")) return;
+    void audio.unlock().then(() => {
       if (audio.isPlaying()) detachNet();
     });
   }
   for (const g of GESTURES) window.addEventListener(g, tryUnlock, { passive: true });
 
+  // mount the route this document loaded as (glyphs/kick/overscroll/cover)
+  routeCleanup = mountRoute(opts.current ?? "space");
+
+  // the PRESS START gate — shown only on a fresh document load
   setupIntro({
     current: opts.current ?? "space",
-    autostart: handoff != null,
-    onNavigate: goToPage,
+    onNavigate: (path) => void navigate(path, true),
     onStart: () => {
-      void audio.unlock(resumeOpts);
+      void audio.unlock();
       scene.boot();
     },
     onBootComplete: () => {
-      stage?.removeAttribute("aria-hidden");
-      footer?.removeAttribute("aria-hidden");
+      $("stage")?.removeAttribute("aria-hidden");
+      $("footer")?.removeAttribute("aria-hidden");
       // dock must be un-hidden BEFORE resize(): sizeViz/sizeCover early-return on
       // a zero-width rect, so resizing while hidden leaves #viz 0-sized forever.
       if (audioDock) audioDock.hidden = false;
-      scene.resize(); // size the now-revealed dock visualizer
-      // carry the mute state across a disc hop
-      if (handoff?.muted && !audio.isMuted()) audio.toggleMute();
+      scene.resize();
       updateToggleUI(audio.isMuted());
-      opts.onReady?.();
-      // per-frame reactivity rides the scene's single rAF loop via onFrame; audio
-      // (re)starts via the gesture net above if it didn't auto-start (iOS).
     },
   });
 

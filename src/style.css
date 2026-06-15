@@ -1569,22 +1569,6 @@ body.disc-swap .intro-logo {
   100% { opacity: 1; transform: translateX(0); }
 }
 
-/* ============================================================
-   Disc hand-off — no-flash autostart
-   The render-blocking head script adds html.autostart pre-paint when arriving
-   from a disc switch (music was playing); suppress the gate and reveal the
-   content instantly so the PRESS START screen never flashes on a hand-off.
-   ============================================================ */
-
-html.autostart #intro {
-  display: none !important;
-}
-
-html.autostart body.booting {
-  overflow: auto;
-}
-
-html.autostart #stage,
-html.autostart #footer {
-  opacity: 1;
-}
+/* Soft-nav (SPA): page switches swap #stage/#footer in place — no reload, no
+   gate, no flash. A freshly-swapped #stage fades in via the existing
+   body.entered #stage transition; nothing extra needed here. */

@@ -62,12 +62,12 @@ async function fetchLive(): Promise<boolean> {
 
 /**
  * Poll Kick for live status and toggle `.is-live` on the Kick tile.
- * Safe to call when the tile is missing (no-op).
+ * Safe to call when the tile is missing (no-op). Returns a cleanup that stops
+ * the poller + listeners — called by the router when this route unmounts so a
+ * soft-nav away from the homepage doesn't leak the interval.
  */
-export function setupKickLiveStatus(tile: HTMLElement | null): void {
-  if (!tile) return;
-
-  let timer: ReturnType<typeof setInterval> | undefined;
+export function setupKickLiveStatus(tile: HTMLElement | null): () => void {
+  if (!tile) return () => {};
 
   const refresh = async (): Promise<void> => {
     try {
@@ -77,18 +77,16 @@ export function setupKickLiveStatus(tile: HTMLElement | null): void {
     }
   };
 
+  const onVisible = (): void => {
+    if (!document.hidden) void refresh();
+  };
+
   void refresh();
-  timer = window.setInterval(() => void refresh(), POLL_MS);
+  const timer = window.setInterval(() => void refresh(), POLL_MS);
+  document.addEventListener("visibilitychange", onVisible, { passive: true });
 
-  document.addEventListener(
-    "visibilitychange",
-    () => {
-      if (!document.hidden) void refresh();
-    },
-    { passive: true },
-  );
-
-  window.addEventListener("pagehide", () => {
-    if (timer) clearInterval(timer);
-  });
+  return () => {
+    clearInterval(timer);
+    document.removeEventListener("visibilitychange", onVisible);
+  };
 }

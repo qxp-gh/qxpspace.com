@@ -5,22 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#04060a" />
 
-    <!-- No-flash disc hand-off: if we arrived from a disc switch (fresh token),
-         suppress the PRESS START gate BEFORE first paint. Key/TTL mirror handoff.ts. -->
-    <script>
-      (function () {
-        try {
-          var h = sessionStorage.getItem("qxp:handoff");
-          if (h && Date.now() - (JSON.parse(h).t || 0) < 10000) {
-            document.documentElement.classList.add("autostart");
-            var s = document.createElement("style");
-            s.textContent = "#intro{display:none!important}";
-            document.head.appendChild(s);
-          }
-        } catch (e) {}
-      })();
-    </script>
-
     <title>Jakub Sládek — Context Engineer & Full Stack Developer</title>
     <meta
       name="description"
@@ -62,10 +46,6 @@
     <div id="fx-flicker" aria-hidden="true"></div>
     <div id="boot-flash" aria-hidden="true"></div>
 
-    <!-- Hidden cover canvas: this page has no jewel case, but glitch.ts needs a
-         canvas. Zero-sized → renderCover no-ops. Do not remove. -->
-    <canvas id="cover" width="0" height="0" aria-hidden="true" style="display: none"></canvas>
-
     <!-- ===== PRESS START gate + disc selector (SHARED layout with homepage) ===== -->
     <div id="intro" role="dialog" aria-label="Enter Jakub Sládek's portfolio">
       <div class="intro-inner">
@@ -98,6 +78,11 @@
 
     <!-- ===== Main experience ===== -->
     <main id="stage" aria-hidden="true">
+      <!-- hidden cover canvas: glitch.ts needs a render target; this page has no
+           jewel case, so it's 0-size (renderCover no-ops). Lives INSIDE #stage so
+           it travels with the soft-nav swap (re-bound via scene.setCover). -->
+      <canvas id="cover" width="0" height="0" aria-hidden="true" style="display: none"></canvas>
+
       <!-- back to the previous disc (normal flow, top of page) -->
       <div class="page-top">
         <a class="back-link" data-disc-nav href="/">← back to qxpspace</a>

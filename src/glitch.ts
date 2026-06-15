@@ -24,6 +24,9 @@ export interface GlitchScene {
   boot(): void;
   /** Re-measure all canvases (call after layout changes, e.g. revealing the dock). */
   resize(): void;
+  /** Re-point the cover render target at a new canvas (after a soft-nav swaps
+   *  #stage). The loaded cover image + starfield are preserved (no re-seed). */
+  setCover(el: HTMLCanvasElement): void;
 }
 
 interface Star {
@@ -82,9 +85,9 @@ export function createGlitchScene(opts: Options): GlitchScene {
   let sfW = 0;
   let sfH = 0;
 
-  // -------- cover --------
-  const cv = opts.cover;
-  const cvx = cv.getContext("2d");
+  // -------- cover -------- (cv/cvx re-bindable via setCover() after a soft-nav)
+  let cv = opts.cover;
+  let cvx = cv.getContext("2d");
   const channels: HTMLCanvasElement[] = [];
   let coverReady = false;
   let coverIdleDrawn = false;
@@ -489,5 +492,13 @@ export function createGlitchScene(opts: Options): GlitchScene {
     burst = 1;
   }
 
-  return { start, stop, boot, resize };
+  function setCover(el: HTMLCanvasElement): void {
+    if (el === cv) return;
+    cv = el;
+    cvx = el.getContext("2d");
+    coverIdleDrawn = false; // force one clean redraw onto the new canvas
+    sizeCover(); // channels + coverReady persist (image loaded once) — no re-seed
+  }
+
+  return { start, stop, boot, resize, setCover };
 }

@@ -4,13 +4,12 @@
  * The gate is a small console boot menu: a carousel of destinations (discs)
  * flipped with the ◄ ► arrows, the dots, or the ←/→ keys. PRESS START boots
  * the highlighted disc:
- *   - if it's THIS page's disc → boot in place (audio unlocks inside the click);
- *   - if it's another page → flag + navigate; that page auto-boots on arrival.
+ *   - if it's THIS page's disc → boot in place;
+ *   - if it's another page → unlock audio (in the gesture) then soft-nav to it.
  *
- * Audio unlocks inside the PRESS START gesture for the in-place case. After a
- * cross-page disc switch the destination boots instantly with NO gate flash (the
- * gate is suppressed pre-paint by the head script); audio resumes from boot.ts's
- * gesture net, since iOS requires a fresh gesture on the new document.
+ * Audio always unlocks inside the PRESS START gesture. The gate only ever shows
+ * on a fresh document load; in-app disc switches are soft navigations (no reload,
+ * no gate), so audio simply keeps playing across them.
  */
 
 export interface Destination {
@@ -39,14 +38,11 @@ interface IntroHandlers {
   onBootComplete: () => void;
   /** id of the destination THIS page represents (selected by default). */
   current: string;
-  /** Switch to another disc's page — the host saves audio state and navigates. */
+  /** Switch to another disc via the host's soft-nav router (no reload). */
   onNavigate: (path: string) => void;
-  /** True when arriving from a disc switch (audio was playing): skip the gate
-   *  entirely and reveal instantly, no flash. */
-  autostart: boolean;
 }
 
-export function setupIntro({ onStart, onBootComplete, current, onNavigate, autostart }: IntroHandlers): void {
+export function setupIntro({ onStart, onBootComplete, current, onNavigate }: IntroHandlers): void {
   const intro = document.getElementById("intro");
   const button = document.getElementById("press-start");
   const flash = document.getElementById("boot-flash");
@@ -57,18 +53,6 @@ export function setupIntro({ onStart, onBootComplete, current, onNavigate, autos
   const nextBtn = document.querySelector<HTMLButtonElement>(".disc-arrow--next");
   const body = document.body;
   if (!intro || !button) return;
-
-  // Arrived from an in-experience disc switch while audio was playing: the gate
-  // is already suppressed pre-paint (head script → html.autostart). Reveal the
-  // content instantly with NO fade; onStart() + boot.ts's gesture net handle audio.
-  if (autostart) {
-    onStart();
-    intro.style.display = "none";
-    body.classList.remove("booting", "entering");
-    body.classList.add("entered");
-    onBootComplete();
-    return;
-  }
 
   const multi = DESTINATIONS.length > 1;
   let index = Math.max(
@@ -117,8 +101,9 @@ export function setupIntro({ onStart, onBootComplete, current, onNavigate, autos
     render(true);
   };
 
-  /** Boot the current page's experience in place (the original gate flow). */
-  const bootInPlace = (): void => {
+  /** Reveal the experience (gate → out). `after` runs once revealed — used to
+   *  soft-nav to another disc when one was picked at the gate. */
+  const bootInPlace = (after?: () => void): void => {
     if (committed) return;
     committed = true;
 
@@ -142,25 +127,18 @@ export function setupIntro({ onStart, onBootComplete, current, onNavigate, autos
       body.classList.remove("booting", "entering");
       body.classList.add("entered");
       onBootComplete();
+      after?.();
     }, EXIT_MS);
 
     window.setTimeout(() => body.classList.remove("glitch-burst"), 1100);
   };
 
-  /** Commit the highlighted disc: boot in place, or jump to its page. */
+  /** Commit the highlighted disc: reveal this page, then soft-nav if it's another. */
   const enter = (): void => {
     if (committed) return;
     const dest = DESTINATIONS[index];
-
-    if (dest && dest.id !== current) {
-      // another disc → hand off to the host (saves audio position, sets the
-      // autostart flag, plays the boot transition, then navigates)
-      committed = true;
-      onNavigate(dest.path);
-      return;
-    }
-
-    bootInPlace();
+    const remote = !!dest && dest.id !== current;
+    bootInPlace(remote && dest ? () => onNavigate(dest.path) : undefined);
   };
 
   prevBtn?.addEventListener("click", (e) => {
