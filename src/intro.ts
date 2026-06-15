@@ -7,10 +7,10 @@
  *   - if it's THIS page's disc → boot in place (audio unlocks inside the click);
  *   - if it's another page → flag + navigate; that page auto-boots on arrival.
  *
- * Audio still unlocks inside a user gesture for the in-place case. After a
- * cross-page jump the destination auto-boots (visuals immediately); audio
- * resumes on arrival where the browser allows, otherwise on the first gesture
- * (boot.ts arms that fallback).
+ * Audio unlocks inside the PRESS START gesture for the in-place case. After a
+ * cross-page disc switch the destination boots instantly with NO gate flash (the
+ * gate is suppressed pre-paint by the head script); audio resumes from boot.ts's
+ * gesture net, since iOS requires a fresh gesture on the new document.
  */
 
 export interface Destination {
@@ -30,7 +30,6 @@ export const DESTINATIONS: Destination[] = [
   { id: "portfolio", logo: "JS", sub: "PORTFOLIO // CONTEXT ENGINEER", path: "/portfolio/" },
 ];
 
-export const AUTOSTART_KEY = "qxp:autostart";
 const EXIT_MS = 700;
 
 interface IntroHandlers {
@@ -40,12 +39,14 @@ interface IntroHandlers {
   onBootComplete: () => void;
   /** id of the destination THIS page represents (selected by default). */
   current: string;
-  /** Switch to another disc's page — the host saves audio state, flags the
-   *  autostart, plays the transition and navigates. */
+  /** Switch to another disc's page — the host saves audio state and navigates. */
   onNavigate: (path: string) => void;
+  /** True when arriving from a disc switch (audio was playing): skip the gate
+   *  entirely and reveal instantly, no flash. */
+  autostart: boolean;
 }
 
-export function setupIntro({ onStart, onBootComplete, current, onNavigate }: IntroHandlers): void {
+export function setupIntro({ onStart, onBootComplete, current, onNavigate, autostart }: IntroHandlers): void {
   const intro = document.getElementById("intro");
   const button = document.getElementById("press-start");
   const flash = document.getElementById("boot-flash");
@@ -56,6 +57,18 @@ export function setupIntro({ onStart, onBootComplete, current, onNavigate }: Int
   const nextBtn = document.querySelector<HTMLButtonElement>(".disc-arrow--next");
   const body = document.body;
   if (!intro || !button) return;
+
+  // Arrived from an in-experience disc switch while audio was playing: the gate
+  // is already suppressed pre-paint (head script → html.autostart). Reveal the
+  // content instantly with NO fade; onStart() + boot.ts's gesture net handle audio.
+  if (autostart) {
+    onStart();
+    intro.style.display = "none";
+    body.classList.remove("booting", "entering");
+    body.classList.add("entered");
+    onBootComplete();
+    return;
+  }
 
   const multi = DESTINATIONS.length > 1;
   let index = Math.max(
@@ -183,14 +196,4 @@ export function setupIntro({ onStart, onBootComplete, current, onNavigate }: Int
 
   render();
   window.requestAnimationFrame(() => button.focus());
-
-  // Arrived via a disc pick on another page → boot this one immediately.
-  let auto = false;
-  try {
-    auto = sessionStorage.getItem(AUTOSTART_KEY) === "1";
-    if (auto) sessionStorage.removeItem(AUTOSTART_KEY);
-  } catch {
-    /* ignore */
-  }
-  if (auto) window.requestAnimationFrame(() => bootInPlace());
 }

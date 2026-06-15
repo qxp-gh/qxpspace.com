@@ -18,15 +18,8 @@
 import "./style.css";
 import { createAudioEngine, type Bands } from "./audio";
 import { createGlitchScene } from "./glitch";
-import { setupIntro, AUTOSTART_KEY } from "./intro";
-
-/** Audio handed off across an in-experience disc switch (kept in sessionStorage). */
-const RESUME_KEY = "qxp:resume";
-interface ResumeState {
-  at: number;
-  muted: boolean;
-  volume: number;
-}
+import { setupIntro } from "./intro";
+import { markHandoff, takeHandoff } from "./handoff";
 
 export const $ = <T extends HTMLElement = HTMLElement>(id: string): T | null =>
   document.getElementById(id) as T | null;
@@ -85,19 +78,12 @@ export function bootExperience(opts: BootOptions = {}): void {
 
   const audio = createAudioEngine(audioEl);
 
-  // Arrived from an in-experience disc switch while music was playing? Resume the
-  // track at the same position instead of restarting from zero.
-  let resume: ResumeState | null = null;
-  try {
-    const raw = sessionStorage.getItem(RESUME_KEY);
-    if (raw) {
-      sessionStorage.removeItem(RESUME_KEY);
-      resume = JSON.parse(raw) as ResumeState;
-    }
-  } catch {
-    /* ignore */
-  }
-  const resumeOpts = resume ? { at: resume.at, instant: true } : undefined;
+  // Arrived from an in-experience disc switch while music was playing? A single-use
+  // hand-off token tells us to skip the gate (no flash) and resume the track at its
+  // position. No token → first/normal load → the gate shows, which is required to
+  // get a valid user gesture to start audio (mandatory on iOS).
+  const handoff = takeHandoff();
+  const resumeOpts = handoff ? { at: handoff.at, instant: true } : undefined;
 
   const visualizers = vizDock ? [vizDock] : [];
 
@@ -167,23 +153,14 @@ export function bootExperience(opts: BootOptions = {}): void {
   };
 
   /**
-   * Switch to another disc's page without re-showing the gate or restarting the
-   * music: stash the playback position + flag the autostart, play the boot
-   * "disc swap" burst, then navigate. The destination resumes from `resume`.
+   * Switch to another disc's page. If music is playing, hand off (skip gate +
+   * resume at position); otherwise write nothing so the destination shows its
+   * gate (whose PRESS START is the valid gesture to start audio on iOS). Play the
+   * "disc swap" burst, then navigate.
    */
   const goToPage = (path: string): void => {
-    try {
-      sessionStorage.setItem(AUTOSTART_KEY, "1");
-      if (audio.isPlaying()) {
-        const state: ResumeState = {
-          at: audio.getCurrentTime(),
-          muted: audio.isMuted(),
-          volume: audio.getVolume(),
-        };
-        sessionStorage.setItem(RESUME_KEY, JSON.stringify(state));
-      }
-    } catch {
-      /* storage blocked — destination just shows its own gate */
+    if (audio.isPlaying()) {
+      markHandoff({ at: audio.getCurrentTime(), muted: audio.isMuted(), volume: audio.getVolume() });
     }
     document.body.classList.add("glitch-burst");
     const flash = $("boot-flash");
@@ -209,8 +186,31 @@ export function bootExperience(opts: BootOptions = {}): void {
     goToPage(href);
   });
 
+  // Robust audio-unlock safety net. Once the experience is entered, the next real
+  // user gesture (re)tries unlock() until playback is CONFIRMED, then self-removes.
+  // This is the only reliable iOS path after a gesture-less auto-boot (activation
+  // doesn't survive a navigation) and a backstop if a PRESS START unlock fails.
+  // It deliberately waits for `entered` so taps on the gate's disc arrows don't
+  // start audio before PRESS START. touchend/pointerup/click cover iOS; keydown desktop.
+  const GESTURES = ["touchend", "pointerup", "click", "keydown"];
+  const detachNet = (): void => {
+    for (const g of GESTURES) window.removeEventListener(g, tryUnlock);
+  };
+  function tryUnlock(): void {
+    if (audio.isPlaying()) {
+      detachNet();
+      return;
+    }
+    if (!document.body.classList.contains("entered")) return; // gate still up
+    void audio.unlock(resumeOpts).then(() => {
+      if (audio.isPlaying()) detachNet();
+    });
+  }
+  for (const g of GESTURES) window.addEventListener(g, tryUnlock, { passive: true });
+
   setupIntro({
     current: opts.current ?? "space",
+    autostart: handoff != null,
     onNavigate: goToPage,
     onStart: () => {
       void audio.unlock(resumeOpts);
@@ -224,19 +224,11 @@ export function bootExperience(opts: BootOptions = {}): void {
       if (audioDock) audioDock.hidden = false;
       scene.resize(); // size the now-revealed dock visualizer
       // carry the mute state across a disc hop
-      if (resume?.muted && !audio.isMuted()) audio.toggleMute();
+      if (handoff?.muted && !audio.isMuted()) audio.toggleMute();
       updateToggleUI(audio.isMuted());
-
-      // If audio didn't actually start (autoplay blocked after a cross-page disc
-      // jump, e.g. Safari), start it on the first user gesture. No-op once playing.
-      const resumeOnce = (): void => {
-        if (!audio.isPlaying()) void audio.unlock(resumeOpts);
-      };
-      window.addEventListener("pointerdown", resumeOnce, { once: true });
-      window.addEventListener("keydown", resumeOnce, { once: true });
-
       opts.onReady?.();
-      // per-frame reactivity now rides the scene's single rAF loop via onFrame
+      // per-frame reactivity rides the scene's single rAF loop via onFrame; audio
+      // (re)starts via the gesture net above if it didn't auto-start (iOS).
     },
   });
 

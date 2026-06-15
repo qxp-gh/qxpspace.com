@@ -4,6 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#04060a" />
+
+    <!-- No-flash disc hand-off: if we arrived from a disc switch (fresh token),
+         suppress the PRESS START gate BEFORE first paint. Key/TTL mirror handoff.ts. -->
+    <script>
+      (function () {
+        try {
+          var h = sessionStorage.getItem("qxp:handoff");
+          if (h && Date.now() - (JSON.parse(h).t || 0) < 10000) {
+            document.documentElement.classList.add("autostart");
+            var s = document.createElement("style");
+            s.textContent = "#intro{display:none!important}";
+            document.head.appendChild(s);
+          }
+        } catch (e) {}
+      })();
+    </script>
+
     <title>Jakub Sládek — Context Engineer & Full Stack Developer</title>
     <meta
       name="description"

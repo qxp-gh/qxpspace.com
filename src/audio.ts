@@ -111,38 +111,54 @@ export function createAudioEngine(audioEl: HTMLAudioElement): AudioEngine {
   async function unlock(opts?: { at?: number; instant?: boolean }): Promise<void> {
     if (started || unlocking) return;
     unlocking = true;
-
-    if (!ctx) buildGraph();
-    if (ctx && ctx.state === "suspended") {
-      try {
-        await ctx.resume();
-      } catch {
-        /* stays suspended — retried on the next gesture */
-      }
-    }
-
-    audioEl.volume = 1; // output level is governed by the gain node
     try {
-      audioEl.currentTime = opts?.at ?? 0;
-      await audioEl.play();
-      // latch ONLY on success, so an autoplay block (cross-page jump, Safari)
-      // can be retried by a later user gesture instead of being stuck muted.
+      if (!ctx) buildGraph();
+
+      // iOS rule: the gated calls must run SYNCHRONOUSLY inside the gesture — an
+      // `await` before play() drops the transient activation and play() rejects.
+      // So fire resume() (don't await yet), seek best-effort, then call play() —
+      // all synchronous — and await only afterwards to observe the result.
+      const resuming = ctx && ctx.state === "suspended" ? ctx.resume() : Promise.resolve();
+      audioEl.volume = 1; // output level is governed by the gain node
+
+      const at = opts?.at;
+      if (at != null) {
+        try {
+          audioEl.currentTime = at; // may throw if not yet seekable — re-applied below
+        } catch {
+          /* seek again after play() resolves */
+        }
+      }
+
+      const playing = audioEl.play(); // FIRST gated call — nothing awaited before it
+      await playing; // rejects with NotAllowedError if the gesture/autoplay was denied
+
+      // latch ONLY on success, so a blocked attempt is retried by a later gesture
       started = true;
+      await resuming.catch(() => {}); // context must be running before gain timing math
+
+      if (at != null && Math.abs(audioEl.currentTime - at) > 0.5) {
+        try {
+          audioEl.currentTime = at; // re-apply resume position now the element is live
+        } catch {
+          /* ignore */
+        }
+      }
+
       if (ctx && gain) {
         const now = ctx.currentTime;
         const target = Math.max(0.0001, muted ? 0.0001 : volume);
         gain.gain.cancelScheduledValues(now);
         if (opts?.instant) {
-          // resuming across a page hop — jump straight to volume, no fade-in
-          gain.gain.setValueAtTime(target, now);
+          gain.gain.setValueAtTime(target, now); // resume across a hop — no fade-in
         } else {
           gain.gain.setValueAtTime(0.0001, now);
           gain.gain.linearRampToValueAtTime(target, now + FADE_SECONDS);
         }
       }
     } catch {
-      // Autoplay still blocked — visuals fall back to idle motion; the boot
-      // arms a one-shot gesture listener that calls unlock() again.
+      // Still blocked (no gesture / autoplay) — leave started=false so a later
+      // user gesture (the boot's gesture net) retries unlock().
       audioEl.volume = muted ? 0 : volume;
     } finally {
       unlocking = false;
