@@ -30,11 +30,6 @@
   --level: 0;
   --glitch: 0;
 
-  /* overscroll-up easter egg: 1 = visible, 0 = foreground faded out.
-     Fades #stage/#footer + FX overlays; the #starfield background and
-     #audio-dock are deliberately left untouched. */
-  --reveal: 1;
-
   --gutter: clamp(1rem, 4vw, 4rem);
   color-scheme: dark;
 }
@@ -109,7 +104,7 @@ canvas {
 }
 
 /* darkening baked into rgba (no mix-blend-mode) so this layer never re-blends
-   the backdrop; opacity is static (driven only by the rare --reveal easter egg) */
+   the backdrop */
 #fx-scanlines {
   background-image: repeating-linear-gradient(
     to bottom,
@@ -118,8 +113,7 @@ canvas {
     rgba(0, 0, 0, 0.34) 3px,
     rgba(0, 0, 0, 0) 4px
   );
-  opacity: calc(0.5 * var(--reveal));
-  transition: opacity 0.12s linear;
+  opacity: 0.5;
 }
 
 /* subtle moving scanline beam */
@@ -156,8 +150,6 @@ canvas {
     rgba(0, 0, 0, 0.92) 100%
   );
   z-index: 61;
-  opacity: var(--reveal);
-  transition: opacity 0.12s linear;
 }
 
 /* faux CRT curvature + glass highlight */
@@ -171,8 +163,6 @@ canvas {
     transparent 60%,
     rgba(2, 5, 8, 0.35) 100%
   );
-  opacity: var(--reveal);
-  transition: opacity 0.12s linear;
 }
 
 #fx-crt::before {
@@ -205,8 +195,6 @@ body.audio-playing #fx-crt::after {
   opacity: 0.12;
   animation: none;
   will-change: opacity;
-  filter: opacity(var(--reveal));
-  transition: filter 0.12s linear;
 }
 
 body.audio-playing #fx-flicker {
@@ -306,8 +294,7 @@ body.glitch-burst .glitch::after {
   position: relative;
   z-index: 10;
   opacity: 0;
-  filter: opacity(var(--reveal));
-  transition: opacity 0.9s ease 0.15s, filter 0.12s linear;
+  transition: opacity 0.9s ease 0.15s;
 }
 
 body.entered #stage {
@@ -829,8 +816,7 @@ body.audio-playing .jewel::after {
   background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4));
   padding: clamp(1.6rem, 4vw, 2.6rem) var(--gutter);
   opacity: 0;
-  filter: opacity(var(--reveal));
-  transition: opacity 0.9s ease 0.3s, filter 0.12s linear;
+  transition: opacity 0.9s ease 0.3s;
 }
 
 body.entered #footer {

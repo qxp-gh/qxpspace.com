@@ -46,77 +46,6 @@ export function buildGlyphs(container: HTMLElement | null): void {
   ).join("");
 }
 
-/* ---------- overscroll-up easter egg (homepage route only) ----------
- * Pulling up past the top fades the foreground to reveal the starfield. Returns
- * a cleanup that removes its window listeners — the router calls it when the
- * homepage route unmounts so a soft-nav away doesn't leak listeners. */
-function setupOverscrollFade(root: HTMLElement): () => void {
-  const TOP_EPS = 2;
-  const MAX_OVERSCROLL = 600;
-  let overscroll = 0;
-  let touchY = 0;
-
-  const apply = (): void => {
-    root.style.setProperty("--reveal", String(1 - Math.min(1, overscroll / MAX_OVERSCROLL)));
-  };
-
-  const onWheel = (e: WheelEvent): void => {
-    const atTop = window.scrollY <= TOP_EPS;
-    if (e.deltaY < 0 && atTop) {
-      overscroll = Math.min(MAX_OVERSCROLL, overscroll - e.deltaY);
-      apply();
-      e.preventDefault();
-    } else if (overscroll > 0 && e.deltaY > 0) {
-      overscroll = Math.max(0, overscroll - e.deltaY);
-      apply();
-      if (overscroll > 0) e.preventDefault();
-    } else if (overscroll > 0 && !atTop) {
-      overscroll = 0;
-      apply();
-    }
-  };
-
-  const onTouchStart = (e: TouchEvent): void => {
-    const t = e.touches[0];
-    if (t) touchY = t.clientY;
-  };
-
-  const onTouchMove = (e: TouchEvent): void => {
-    const t = e.touches[0];
-    if (!t) return;
-    const dy = t.clientY - touchY;
-    touchY = t.clientY;
-    const atTop = window.scrollY <= TOP_EPS;
-    if (dy > 0 && atTop) {
-      overscroll = Math.min(MAX_OVERSCROLL, overscroll + dy);
-      apply();
-    } else if (overscroll > 0 && dy < 0) {
-      overscroll = Math.max(0, overscroll + dy);
-      apply();
-    }
-  };
-
-  const onScroll = (): void => {
-    if (overscroll > 0 && window.scrollY > TOP_EPS) {
-      overscroll = 0;
-      apply();
-    }
-  };
-
-  window.addEventListener("wheel", onWheel, { passive: false });
-  window.addEventListener("touchstart", onTouchStart, { passive: true });
-  window.addEventListener("touchmove", onTouchMove, { passive: true });
-  window.addEventListener("scroll", onScroll, { passive: true });
-
-  return () => {
-    window.removeEventListener("wheel", onWheel);
-    window.removeEventListener("touchstart", onTouchStart);
-    window.removeEventListener("touchmove", onTouchMove);
-    window.removeEventListener("scroll", onScroll);
-    root.style.setProperty("--reveal", "1");
-  };
-}
-
 export interface BootOptions {
   /** Source for the glitch cover canvas. Defaults to /cover.png. */
   coverSrc?: string;
@@ -214,7 +143,6 @@ export function bootExperience(opts: BootOptions = {}): void {
     if (id === "space") {
       buildGlyphs($("hero-glyphs"));
       cleanups.push(setupKickLiveStatus($("kick-tile")));
-      cleanups.push(setupOverscrollFade(root));
     }
     return () => {
       for (const c of cleanups) c();
@@ -223,6 +151,7 @@ export function bootExperience(opts: BootOptions = {}): void {
 
   let routeCleanup: () => void = () => {};
   let navigating = false;
+  let mountedId = opts.current ?? "space"; // route currently shown in #stage
 
   const pageId = (pathname: string): string | null => {
     let p = pathname.replace(/index\.html$/, "");
@@ -268,6 +197,7 @@ export function bootExperience(opts: BootOptions = {}): void {
       if (push) history.pushState({ spa: true }, "", url.pathname);
       window.scrollTo(0, 0);
 
+      mountedId = id;
       routeCleanup = mountRoute(id);
     } catch {
       window.location.href = url.pathname; // network/parse failure → hard nav
@@ -288,6 +218,11 @@ export function bootExperience(opts: BootOptions = {}): void {
   });
 
   window.addEventListener("popstate", () => {
+    // An in-page anchor (e.g. hero "VIEW THE WORK" → #builds) changes only the
+    // hash and fires popstate with the SAME path. Don't soft-reload the page for
+    // that — it would refetch #stage and scroll back to the top, killing the
+    // browser's native scroll-to-fragment. Only re-navigate when the page changed.
+    if (pageId(location.pathname) === mountedId) return;
     void navigate(location.pathname, false);
   });
 
@@ -312,7 +247,7 @@ export function bootExperience(opts: BootOptions = {}): void {
   }
   for (const g of GESTURES) window.addEventListener(g, tryUnlock, { passive: true });
 
-  // mount the route this document loaded as (glyphs/kick/overscroll/cover)
+  // mount the route this document loaded as (glyphs/kick/cover)
   routeCleanup = mountRoute(opts.current ?? "space");
 
   // the PRESS START gate — shown only on a fresh document load
