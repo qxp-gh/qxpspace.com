@@ -20,8 +20,8 @@ wired to a 60-minute space-funk mix, and a PS-menu hub of links.
   the visuals: **bass drives glitch intensity**, the reactive starfield streaks on
   hits, and CSS custom properties (`--bass`, `--level`, `--glitch`) drive flicker
   and the headline split.
-- **Signals hub** — PlayStation-menu tiles: **YouTube** `@qxp_yt`, **Kick**
-  `@qxp-kick` (with a pulsing LIVE indicator), **GitHub** `qxp-gh`.
+- **Signals hub** — PlayStation-menu tiles: **YouTube** `@jaymadeapp`, **Kick**
+  `@qxp-kick` (with a pulsing LIVE indicator), **GitHub** `jaymadeapp`.
 - **Manifesto + footer** — a punchy qxp about, a "now playing" indicator, a credit
   link to the source mix, the four cover glyphs, and a mute/unmute toggle.
 - **Mobile + a11y** — effects scale down on small screens, the layout reflows
